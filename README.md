@@ -5,11 +5,11 @@ Reproducing results from the [original IWAE paper](https://arxiv.org/pdf/1509.00
 ### Usage
 
 ``` 
-python main.py --n_latent <# of latent space dimensions, 50 by default>  
-               --n_samples <# of importance samples, 5 by default>  
-               --n_hidden <# of hidden units in the nueral network layers, 200 by default>  
+python main.py --n_latent   <# of latent space dimensions, 50 by default>  
+               --n_samples  <# of importance samples, 5 by default>  
+               --n_hidden   <# of hidden units in the nueral network layers, 200 by default>  
                --batch_size <20 by default>
-               --epochs <# of epochs, if set to -1 the number of epochs will be based on the learning rate scheme from the paper>
+               --epochs     <# of epochs, if set to -1 the number of epochs will be based on the learning rate scheme from the paper>
 ```
 The original paper uses a train-test split and does not monitor a validation loss during training. Just out of curiosity we will set aside a validation set from the training set, to monitor performance during training. This can also be used to do early stopping by loading the weights from the iteration with the highest validation loss. On the other hand there will be less training data available.  
 Use tensorboard as
@@ -20,7 +20,7 @@ Note that we are using the fixed/static binarization of the MNIST dataset, which
 | Method | test-set LLH estimate (this repo) | test-set LLH estimate ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
 | --- | --- | --- |
 | 1 | | |
-| 5 | | |
+| 5 | -87.65 | -87.63 |
 | 50 | | |  
 
 
