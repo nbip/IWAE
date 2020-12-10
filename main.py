@@ -215,7 +215,7 @@ L = 5000
 
 # ---- since we are using 5000 importance samples we have to loop over each element of the test-set
 for i, x in enumerate(Xtest):
-    res = model(x[None, :], L)
+    res = model(x[None, :].astype(np.float32), L)
     test_elbo_metric.update_state(res['elbo'][None, None])
     if i % 200 == 0:
         print("{0}/{1}".format(i, Ntest))
