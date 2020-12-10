@@ -76,7 +76,7 @@ Ntest = Xtest.shape[0]
 Xtrain = Xtrain.reshape(Ntrain, -1) / 255
 Xtest = Xtest.reshape(Ntest, -1) / 255
 
-# ---- train and validation steps
+# ---- train step
 @tf.function
 def train_step(model, x, n_samples, optimizer):
 
