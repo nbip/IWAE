@@ -7,6 +7,11 @@ matplotlib.use('Agg')  # needed when running from commandline
 import matplotlib.pyplot as plt
 
 
+# ---- dynamic binarize the data
+def bernoullisample(x):
+    return np.random.binomial(1, x, size=x.shape).astype('float32')
+
+
 def static_binarization_mnist(fashion=False):
 
     # ---- load data

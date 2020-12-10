@@ -17,7 +17,7 @@ Use tensorboard as
 
 ### Results
 Note that we are using the fixed/static binarization of the MNIST dataset, which should be compared to the results in appendix D.  
-| Method | \\(\mathcal{L}_{\text{test}}^{5000}\\) (this repo) | \\(\mathcal{L}_{\text{test}}^{5000}\\) ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
+| Method | \\[ \mathcal{L}_{\text{test}}^{5000} \\] (this repo) | \\[ \mathcal{L}_{\text{test}}^{5000} \\] ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
 | --- | --- | --- |
 | 1 | | |
 | 5 | -87.65 | -87.63 |
