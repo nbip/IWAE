@@ -134,7 +134,7 @@ val_history = []
 for epoch in range(epochs):
 
     # ---- check if the learning rate needs to be updated
-    if args.epoch == -1 and np.sum(epoch == np.asarray(learning_rate_change_epoch)) > 0:
+    if args.epochs == -1 and np.sum(epoch == np.asarray(learning_rate_change_epoch)) > 0:
         idx = np.where(epoch == np.asarray(learning_rate_change_epoch))[0][0]
 
         new_learning_rate = learning_rates[idx + 1]
