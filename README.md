@@ -16,10 +16,18 @@ Use tensorboard as
 ``` tensorboard --logdir=/tmp/iwae ```
 
 ### Results
-Note that we are using the fixed/static binarization of the MNIST dataset, which should be compared to the results in appendix D.  
-| Method | <img src="https://render.githubusercontent.com/render/math?math=\mathcal{L}_{\te\
-xt{test}}^{5000}"> (this repo) | <img src="https://render.githubusercontent.com/render/math?math=\mathcal{L}_{\te\
-xt{test}}^{5000}"> ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
+Test-set log likelihoods are estimated using 5000 importance samples
+#### Dynamic binarization
+| Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.005\
+19.pdf)) |
+| --- | --- | --- |
+| 1 | | |
+| 5 | | |
+| 50 | | |
+
+#### Static binarization
+Should be compared to the results in appendix D.  
+| Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
 | --- | --- | --- |
 | 1 | | |
 | 5 | -87.65 | -87.63 |
