@@ -7,7 +7,7 @@ matplotlib.use('Agg')  # needed when running from commandline
 import matplotlib.pyplot as plt
 
 
-def createBinarizedMnist(fashion=False):
+def create_binarized_mnist(fashion=False):
 
     # ---- load data
     if fashion:
@@ -54,7 +54,7 @@ def createBinarizedMnist(fashion=False):
     return Xtrain, Xval, Xtest, ytrain, yval, ytest
 
 
-def plot_prior(model, n, epoch, n_latent, d=28, name=''):
+def plot_prior(model, n, epoch, n_latent, d=28, suffix=''):
     # https://keras.io/examples/generative/vae/
 
     if n_latent == 2:
@@ -92,14 +92,14 @@ def plot_prior(model, n, epoch, n_latent, d=28, name=''):
     plt.figure(figsize=(10, 10))
     plt.imshow(canvas1, cmap='gray_r')
     plt.axis('Off')
-    plt.savefig('task01_latent_epoch_{0:02d}'.format(epoch) + name)
+    plt.savefig('task01_latent_epoch_{0:02d}'.format(epoch) + suffix)
     plt.close()
 
     plt.clf()
     plt.figure(figsize=(10, 10))
     plt.imshow(canvas2, cmap='gray_r')
     plt.axis('Off')
-    plt.savefig('task01_latent_samples_epoch_{0:02d}'.format(epoch) + name)
+    plt.savefig('task01_latent_samples_epoch_{0:02d}'.format(epoch) + suffix)
     plt.close()
 
 
