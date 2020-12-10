@@ -7,7 +7,7 @@ matplotlib.use('Agg')  # needed when running from commandline
 import matplotlib.pyplot as plt
 
 
-def create_binarized_mnist(fashion=False):
+def static_binarization_mnist(fashion=False):
 
     # ---- load data
     if fashion:
@@ -52,6 +52,54 @@ def create_binarized_mnist(fashion=False):
     ytest = ytest[p]
 
     return Xtrain, Xval, Xtest, ytrain, yval, ytest
+
+
+def mnist(fashion=False):
+
+    # ---- load data
+    if fashion:
+        (Xtrain, ytrain), (Xtest, ytest) = keras.datasets.fashion_mnist.load_data()
+    else:
+        (Xtrain, ytrain), (Xtest, ytest) = keras.datasets.mnist.load_data()
+    Ntrain = Xtrain.shape[0]
+    Ntest = Xtest.shape[0]
+
+    # ---- reshape to vectors
+    Xtrain = Xtrain.reshape(Ntrain, -1)
+    Xtest = Xtest.reshape(Ntest, -1) / 255
+
+    # ---- create validation set
+    Xval = Xtrain[-10000:] / 255
+    Xtrain = Xtrain[:-10000] / 255
+    yval = ytrain[-10000:]
+    ytrain = ytrain[:-10000]
+
+    Ntrain = Xtrain.shape[0]
+    Ntest = Xtest.shape[0]
+    Nval = Xval.shape[0]
+
+    # ---- dynamic binarize the data
+    def bernoullisample(x):
+        return np.random.binomial(1, x, size=x.shape).astype('float32')
+
+    Xtrain = bernoullisample(Xtrain)
+    Xval = bernoullisample(Xval)
+    Xtest = bernoullisample(Xtest)
+
+    p = np.random.permutation(Ntrain)
+    Xtrain = Xtrain[p, :]
+    ytrain = ytrain[p]
+
+    p = np.random.permutation(Nval)
+    Xval = Xval[p, :]
+    yval = yval[p]
+
+    p = np.random.permutation(Ntest)
+    Xtest = Xtest[p, :]
+    ytest = ytest[p]
+
+    return Xtrain, Xval, Xtest, ytrain, yval, ytest
+
 
 
 def plot_prior(model, n, epoch, n_latent, d=28, suffix=''):
