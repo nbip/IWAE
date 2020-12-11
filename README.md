@@ -13,14 +13,15 @@ python main.py --n_latent   <# of latent space dimensions, 50 by default>
 ```
 The original paper uses a train-test split and does not monitor a validation loss during training. Just out of curiosity we will set aside a validation set from the training set, to monitor performance during training. This can also be used to do early stopping by loading the weights from the iteration with the highest validation loss. On the other hand there will be less training data available.  
 Use tensorboard as
-``` tensorboard --logdir=/tmp/iwae ```
+``` 
+tensorboard --logdir=/tmp/iwae 
+```
 
 ### Results
 Test-set log likelihoods are estimated using 5000 importance samples
-#### Dynamic binarization
 
-| Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.005\
-19.pdf)) |
+#### Dynamic binarization
+| Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
 | --- | --- | --- |
 | 1 | -87.75 | -86.76 |
 | 5 | -85.50 | -85.54 |
