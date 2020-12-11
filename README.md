@@ -18,20 +18,21 @@ Use tensorboard as
 ### Results
 Test-set log likelihoods are estimated using 5000 importance samples
 #### Dynamic binarization
+
 | Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.005\
 19.pdf)) |
 | --- | --- | --- |
-| 1 | | |
-| 5 | | |
-| 50 | | |
+| 1 | -87.75 | -86.76 |
+| 5 | -85.50 | -85.54 |
+| 50 | -84.65 | -84.78 |
 
 #### Static binarization
 Should be compared to the results in appendix D.  
 | Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
 | --- | --- | --- |
-| 1 | | |
+| 1 | -89.93 | -88.71 |
 | 5 | -87.65 | -87.63 |
-| 50 | | |  
+| 50 | -86.71 | -87.10 |  
 
 
 ### Comparisons
@@ -43,11 +44,12 @@ A number of other repositories have reproduced these results, see for example
 - [yoonholee](https://github.com/yoonholee/pytorch-vae)
 
 ### TODO:
-Extend to dynamically binarized mnist  
+Extend to two stochastic layers  
 Implement [DReG](https://arxiv.org/abs/1810.04152)  
+Show true and variational posteriors
+Show active units
 Implement quantized distribution  
 Implement MIWAE  
 Show
 - SNIS
 - SIR
-- 2D posterior
