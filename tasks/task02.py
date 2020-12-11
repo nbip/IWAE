@@ -147,6 +147,9 @@ for epoch in range(epochs):
             print("epoch {0}/{1}, step {2}/{3}, train ELBO: {4:.2f}, time: {5:.2f}"
                   .format(epoch, epochs, step, total_steps, res["elbo"].numpy(), took))
 
+# ---- save final weights
+model.save_weights('/tmp/iwae/task02/final_weights' + '_nsamples_{}'.format(n_samples))
+
 # ---- plot the training history
 plt.clf()
 plt.plot(train_history)
