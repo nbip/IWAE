@@ -106,8 +106,7 @@ def mnist(fashion=False):
     return Xtrain, Xval, Xtest, ytrain, yval, ytest
 
 
-
-def plot_prior(model, n, epoch, n_latent, d=28, suffix=''):
+def plot_prior(model, n, epoch, n_latent, d=28, prefix='', suffix=''):
     # https://keras.io/examples/generative/vae/
 
     if n_latent == 2:
@@ -152,7 +151,7 @@ def plot_prior(model, n, epoch, n_latent, d=28, suffix=''):
     plt.figure(figsize=(10, 10))
     plt.imshow(canvas2, cmap='gray_r')
     plt.axis('Off')
-    plt.savefig('task01_latent_samples_epoch_{0:02d}'.format(epoch) + suffix)
+    plt.savefig(prefix + 'latent_samples_epoch_{0:02d}'.format(epoch) + suffix)
     plt.close()
 
 

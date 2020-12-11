@@ -35,6 +35,15 @@ Should be compared to the results in appendix D.
 | 5 | -87.65 | -87.63 |
 | 50 | -86.71 | -87.10 |  
 
+### Tasks
+`main.py`: original experiment with 1 stochastic layer.  
+`task01.py`: 1 stochastic layer, but with validation set and early stopping.  We use the validation set to monitor performance via tensorboard, and to store the optimal set of weights.  
+`task02.py`: 1 stochastic layer and static binarization.  
+`task03.py`: 1 stochastic layer, static binarization and validation set for tensorboard and early stopping.  
+`task04.py`: Monitor how reconstructions and sampels from the prior changes during training.  
+`task05.py`: Use the Double Reparameterized Gradient Estimator, [DReG](https://arxiv.org/pdf/1810.04152.pdf), to the original experiment.  
+`task06.py`: Two stochastic layers.  
+`task07.py`: Use a 2D latent space to investigate both true and variational posteriors. We can use *self-normalized importance sampling* to estimate posterior means and *sampling importance resampling* to draw samples from the true posterior.  
 
 ### Comparisons
 A number of other repositories have reproduced these results, see for example  
