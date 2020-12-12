@@ -310,14 +310,14 @@ for epoch in range(epochs):
         .shuffle(Ntrain).batch(batch_size))
 
     # ---- check if the learning rate needs to be updated
-    # if args.epochs == -1 and np.sum(epoch == np.asarray(learning_rate_change_epoch)) > 0:
-    #     idx = np.where(epoch == np.asarray(learning_rate_change_epoch))[0][0]
-    #
-    #     new_learning_rate = learning_rates[idx + 1]
-    #     old_learning_rate = optimizer.learning_rate.numpy()
-    #
-    #     print("Changing learning rate from {0} to {1}".format(old_learning_rate, new_learning_rate))
-    #     optimizer.learning_rate.assign(new_learning_rate)
+    if args.epochs == -1 and np.sum(epoch == np.asarray(learning_rate_change_epoch)) > 0:
+        idx = np.where(epoch == np.asarray(learning_rate_change_epoch))[0][0]
+
+        new_learning_rate = learning_rates[idx + 1]
+        old_learning_rate = optimizer.learning_rate.numpy()
+
+        print("Changing learning rate from {0} to {1}".format(old_learning_rate, new_learning_rate))
+        optimizer.learning_rate.assign(new_learning_rate)
 
     for _step, x_batch in enumerate(train_dataset):
         step = _step + steps_pr_epoch * epoch
