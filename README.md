@@ -2,7 +2,7 @@
 
 Reproducing results from the [original IWAE paper](https://arxiv.org/pdf/1509.00519.pdf) in TensorFlow 2. 
 
-### Usage
+## Usage
 The results for the model with 1 stochastic layer and 1, 5 or 50 importance samples can be obtained by running `main.py` with the default settings, adjusting the number of samples.
 ``` 
 python main.py --n_latent   <# of latent space dimensions, 50 by default>  
@@ -13,7 +13,7 @@ python main.py --n_latent   <# of latent space dimensions, 50 by default>
 ```
 The model is investigated further in a series of tasks found in `./tasks`
 
-### Results
+## Results
 Test-set log likelihoods are estimated using 5000 importance samples
 
 #### Dynamic binarization
@@ -31,7 +31,7 @@ Should be compared to the results in appendix D.
 | 5 | -87.65 | -87.63 |
 | 50 | -86.71 | -87.10 |  
 
-### Tasks
+## Tasks
 `main.py`: original experiment with 1 stochastic layer.  
 `task01.py`: 1 stochastic layer, but with validation set and early stopping.  We use the validation set to monitor performance via tensorboard, and to store the optimal set of weights.  
 `task02.py`: 1 stochastic layer and static binarization.  
@@ -41,10 +41,10 @@ Should be compared to the results in appendix D.
 `task06.py`: Two stochastic layers.  
 `task07.py`: Use a 2D latent space to investigate both true and variational posteriors. We can use *self-normalized importance sampling* to estimate posterior means and *sampling importance resampling* to draw samples from the true posterior.  
 
-#### Two stochastic layers
+### Two stochastic layers
 See [Ladder VAE](https://arxiv.org/pdf/1602.02282.pdf) and accompanying [github](https://github.com/casperkaae/LVAE) and [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders/blob/master/model/vae_models.py)
 
-### Comparisons
+## Comparisons
 A number of other repositories have reproduced these results, see for example  
 - The original code acompanying the paper [yburda](https://github.com/yburda/iwae)  
 - [abdulfatir](https://github.com/abdulfatir/IWAE-tensorflow)  
@@ -52,7 +52,7 @@ A number of other repositories have reproduced these results, see for example
 - [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders)
 - [yoonholee](https://github.com/yoonholee/pytorch-vae)
 
-### TODO:
+## TODO:
 Extend to two stochastic layers  
 Implement [DReG](https://arxiv.org/abs/1810.04152)  
 Show true and variational posteriors
