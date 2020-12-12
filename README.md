@@ -31,6 +31,15 @@ Should be compared to the results in appendix D.
 | 5 | -87.65 | -87.63 |
 | 50 | -86.71 | -87.10 |  
 
+#### DReG dynamic binarization
+The Doubly Reparameterized Gradient Estimator for Monte Carlo Objectives, [DReG](https://arxiv.org/pdf/1810.04152.pdf) provides even lower variance gradients for the inference network, than just using the reparameterization trick. 
+
+| Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
+| --- | --- | --- |
+| 1 |  |  |
+| 5 |  |  |
+| 50 |  |  |
+
 ## Tasks
 `main.py`: original experiment with 1 stochastic layer.  
 `task01.py`: 1 stochastic layer, but with validation set and early stopping.  We use the validation set to monitor performance via tensorboard, and to store the optimal set of weights.  
