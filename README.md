@@ -1,9 +1,9 @@
 # IWAE
 
-Reproducing results from the [original IWAE paper](https://arxiv.org/pdf/1509.00519.pdf) in tensorflow2. 
+Reproducing results from the [original IWAE paper](https://arxiv.org/pdf/1509.00519.pdf) in TensorFlow 2. 
 
 ### Usage
-
+The results for the model with 1 stochastic layer and 1, 5 or 50 importance samples can be obtained by running `main.py` with the default settings, adjusting the number of samples.
 ``` 
 python main.py --n_latent   <# of latent space dimensions, 50 by default>  
                --n_samples  <# of importance samples, 5 by default>  
@@ -11,11 +11,7 @@ python main.py --n_latent   <# of latent space dimensions, 50 by default>
                --batch_size <20 by default>
                --epochs     <# of epochs, if set to -1 the number of epochs will be based on the learning rate scheme from the paper>
 ```
-The original paper uses a train-test split and does not monitor a validation loss during training. Just out of curiosity we will set aside a validation set from the training set, to monitor performance during training. This can also be used to do early stopping by loading the weights from the iteration with the highest validation loss. On the other hand there will be less training data available.  
-Use tensorboard as
-``` 
-tensorboard --logdir=/tmp/iwae 
-```
+The model is investigated further in a series of tasks found in `./tasks`
 
 ### Results
 Test-set log likelihoods are estimated using 5000 importance samples
@@ -44,6 +40,9 @@ Should be compared to the results in appendix D.
 `task05.py`: Use the Double Reparameterized Gradient Estimator, [DReG](https://arxiv.org/pdf/1810.04152.pdf), to the original experiment.  
 `task06.py`: Two stochastic layers.  
 `task07.py`: Use a 2D latent space to investigate both true and variational posteriors. We can use *self-normalized importance sampling* to estimate posterior means and *sampling importance resampling* to draw samples from the true posterior.  
+
+#### Two stochastic layers
+See [Ladder VAE](https://arxiv.org/pdf/1602.02282.pdf) and accompanying [github](https://github.com/casperkaae/LVAE) and [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders/blob/master/model/vae_models.py)
 
 ### Comparisons
 A number of other repositories have reproduced these results, see for example  
