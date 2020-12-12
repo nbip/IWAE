@@ -80,7 +80,7 @@ Ntest = Xtest.shape[0]
 
 # ---- reshape to vectors
 Xtrain = Xtrain.reshape(Ntrain, -1) / 255
-Xval = Xtrain.reshape(Nval, -1) / 255
+Xval = Xval.reshape(Nval, -1) / 255
 Xtest = Xtest.reshape(Ntest, -1) / 255
 
 
