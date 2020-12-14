@@ -241,11 +241,17 @@ class IWAE(tf.keras.Model):
         # log weights
         log_w = lpxz1 + lpz1z2 + lpz2 - lqz1x - lqz2z1
 
-        # average over samples
-        log_avg_w = logmeanexp(log_w)
+        # log_w with stopped gradients
+        log_w_stopped = tf.stop_gradient(log_w)
+
+        # normalized importance weights
+        normalized_w = tf.nn.softmax(log_w_stopped, axis=0)
+
+        # the objective in eq 14
+        objective = tf.reduce_sum(normalized_w * log_w, axis=0)
 
         # average over batch
-        elbo = tf.reduce_mean(log_avg_w, axis=-1)
+        elbo = tf.reduce_mean(objective, axis=-1)
 
         # loss is the negative elbo
         loss = -elbo
@@ -254,7 +260,7 @@ class IWAE(tf.keras.Model):
                 "elbo": elbo,
                 # "kl": kl_qzx_pz,
                 # "vae_elbo": vae_elbo,
-                "log_avg_w": log_avg_w,
+                "log_avg_w": objective,
                 "z1": z1,
                 "z2": z2,
                 "logits": logits,
@@ -287,8 +293,8 @@ def val_step(model, x, n_samples):
 
 # ---- prepare tensorboard
 current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-train_log_dir = "/tmp/iwae/task07/" + current_time + "/train"
-val_log_dir = "/tmp/iwae/task07/" + current_time + "/val"
+train_log_dir = "/tmp/iwae/task08/" + current_time + "/train"
+val_log_dir = "/tmp/iwae/task08/" + current_time + "/val"
 train_summary_writer = tf.summary.create_file_writer(train_log_dir)
 val_summary_writer = tf.summary.create_file_writer(val_log_dir)
 
@@ -398,7 +404,7 @@ for epoch in range(epochs):
             # ---- save the model if the validation loss improves
             if val_elbo > best:
                 print("saving model...")
-                model.save_weights('/tmp/iwae/task07/best_weights' + '_nsamples_{}'.format(n_samples))
+                model.save_weights('/tmp/iwae/task08/best_weights' + '_nsamples_{}'.format(n_samples))
                 best = val_elbo
 
             took = time.time() - start
@@ -408,7 +414,7 @@ for epoch in range(epochs):
                   .format(epoch, epochs, step, total_steps, res["elbo"].numpy(), val_elbo.numpy(), took))
 
 # ---- save final weights
-model.save_weights('/tmp/iwae/task07/final_weights' + '_nsamples_{}'.format(n_samples))
+model.save_weights('/tmp/iwae/task08/final_weights' + '_nsamples_{}'.format(n_samples))
 
 # ---- test-set llh estimate using 5000 samples
 test_elbo_metric = utils.MyMetric()
