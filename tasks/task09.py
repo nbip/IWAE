@@ -234,9 +234,11 @@ class IWAE(tf.keras.Model):
 
         lpxz1 = tf.reduce_sum(pxz1.log_prob(x), axis=-1)
 
-        # kl_qzx_pz = tf.reduce_sum(tfd.kl_divergence(qzx, pz), axis=-1)
+        kl_qz2z1_pz2 = tf.reduce_sum(tfd.kl_divergence(qz2z1, pz2), axis=-1)
 
-        # vae_elbo = -kl_qzx_pz + tf.reduce_mean(lpxz)
+        kl_qz1x_pz1z2 = tf.reduce_sum(tfd.kl_divergence(qz1x, pz1z2), axis=-1)
+
+        vae_elbo = tf.reduce_mean(-kl_qz2z1_pz2 - kl_qz1x_pz1z2 + lpxz1)
 
         # log weights
         log_w = lpxz1 + lpz1z2 + lpz2 - lqz1x - lqz2z1
@@ -244,15 +246,16 @@ class IWAE(tf.keras.Model):
         log_avg_w = logmeanexp(log_w)
 
         # average over batch
-        elbo = tf.reduce_mean(log_avg_w, axis=-1)
+        # elbo = tf.reduce_mean(log_avg_w, axis=-1)
 
         # loss is the negative elbo
-        loss = -elbo
+        # loss = -elbo
+        loss = -vae_elbo
 
         return {"loss": loss,
-                "elbo": elbo,
+                "elbo": vae_elbo,
                 # "kl": kl_qzx_pz,
-                # "vae_elbo": vae_elbo,
+                "vae_elbo": vae_elbo,
                 "log_avg_w": log_avg_w,
                 "z1": z1,
                 "z2": z2,
@@ -286,8 +289,8 @@ def val_step(model, x, n_samples):
 
 # ---- prepare tensorboard
 current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-train_log_dir = "/tmp/iwae/task07/" + current_time + "/train"
-val_log_dir = "/tmp/iwae/task07/" + current_time + "/val"
+train_log_dir = "/tmp/iwae/task09/" + current_time + "/train"
+val_log_dir = "/tmp/iwae/task09/" + current_time + "/val"
 train_summary_writer = tf.summary.create_file_writer(train_log_dir)
 val_summary_writer = tf.summary.create_file_writer(val_log_dir)
 
@@ -397,7 +400,7 @@ for epoch in range(epochs):
             # ---- save the model if the validation loss improves
             if val_elbo > best:
                 print("saving model...")
-                model.save_weights('/tmp/iwae/task07/best_weights' + '_nsamples_{}'.format(n_samples))
+                model.save_weights('/tmp/iwae/task09/best_weights' + '_nsamples_{}'.format(n_samples))
                 best = val_elbo
 
             took = time.time() - start
@@ -407,7 +410,7 @@ for epoch in range(epochs):
                   .format(epoch, epochs, step, total_steps, res["elbo"].numpy(), val_elbo.numpy(), took))
 
 # ---- save final weights
-model.save_weights('/tmp/iwae/task07/final_weights' + '_nsamples_{}'.format(n_samples))
+model.save_weights('/tmp/iwae/task09/final_weights' + '_nsamples_{}'.format(n_samples))
 
 # ---- test-set llh estimate using 5000 samples
 test_elbo_metric = utils.MyMetric()
