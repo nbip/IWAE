@@ -124,7 +124,7 @@ for epoch in range(epochs):
         .shuffle(Ntrain).batch(batch_size))
 
     # ---- check if the learning rate needs to be updated
-    if args.epochs == -1 and np.sum(epoch == np.asarray(learning_rate_change_epoch)) > 0:
+    if args.epochs == -1 and np.sum(epoch == np.asarray(learning_rate_change_epoch)) > 0:  # TODO: if epoch in.. ?
         idx = np.where(epoch == np.asarray(learning_rate_change_epoch))[0][0]
 
         new_learning_rate = learning_rates[idx + 1]

@@ -241,7 +241,6 @@ class IWAE(tf.keras.Model):
         # log weights
         log_w = lpxz1 + lpz1z2 + lpz2 - lqz1x - lqz2z1
 
-        # average over samples
         log_avg_w = logmeanexp(log_w)
 
         # average over batch
@@ -287,8 +286,8 @@ def val_step(model, x, n_samples):
 
 # ---- prepare tensorboard
 current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-train_log_dir = "/tmp/iwae/task07/" + current_time + "/train"
-val_log_dir = "/tmp/iwae/task07/" + current_time + "/val"
+train_log_dir = "/tmp/iwae/task08/" + current_time + "/train"
+val_log_dir = "/tmp/iwae/task08/" + current_time + "/val"
 train_summary_writer = tf.summary.create_file_writer(train_log_dir)
 val_summary_writer = tf.summary.create_file_writer(val_log_dir)
 
@@ -301,7 +300,7 @@ model = IWAE(n_hidden1,
              n_latent1,
              n_latent2)
 
-optimizer = keras.optimizers.Adam(learning_rates[0])
+optimizer = keras.optimizers.Adam(learning_rates[0], epsilon=1e-4)
 print("Initial learning rate: ", optimizer.learning_rate.numpy())
 
 # ---- binarize the validation data
@@ -398,7 +397,7 @@ for epoch in range(epochs):
             # ---- save the model if the validation loss improves
             if val_elbo > best:
                 print("saving model...")
-                model.save_weights('/tmp/iwae/task07/best_weights' + '_nsamples_{}'.format(n_samples))
+                model.save_weights('/tmp/iwae/task08/best_weights' + '_nsamples_{}'.format(n_samples))
                 best = val_elbo
 
             took = time.time() - start
@@ -408,7 +407,7 @@ for epoch in range(epochs):
                   .format(epoch, epochs, step, total_steps, res["elbo"].numpy(), val_elbo.numpy(), took))
 
 # ---- save final weights
-model.save_weights('/tmp/iwae/task07/final_weights' + '_nsamples_{}'.format(n_samples))
+model.save_weights('/tmp/iwae/task08/final_weights' + '_nsamples_{}'.format(n_samples))
 
 # ---- test-set llh estimate using 5000 samples
 test_elbo_metric = utils.MyMetric()

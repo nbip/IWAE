@@ -307,7 +307,7 @@ model = IWAE(n_hidden1,
              n_latent1,
              n_latent2)
 
-optimizer = keras.optimizers.Adam(learning_rates[0])
+optimizer = keras.optimizers.Adam(learning_rates[0], epsilon=1e-4)
 print("Initial learning rate: ", optimizer.learning_rate.numpy())
 
 # ---- binarize the validation data

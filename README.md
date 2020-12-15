@@ -61,6 +61,13 @@ A number of other repositories have reproduced these results, see for example
 - [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders)
 - [yoonholee](https://github.com/yoonholee/pytorch-vae)
 
+## Settings:  
+
+I get significantly different results when using the ELBO as formulated in eq 8 (with 1-monte-carlo sample) compared to the formulation in eq 14. 15dec2020 I am running a head-to-head comparison on cronus in task07 and task08. Here the correct $\epsilon$ is also used.
+
+In the paper, the initalizer from [Glorot & Bengeio (2010)](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf?source=post_page---------------------------) is used to initialize hidden layers. This is also the keras default initializer, which has also been used here.  
+The paper uses Adam optimizer [Kingma & Ba](https://arxiv.org/abs/1412.6980), with $\beta_1 = 0.9$, $\beta_2=0.999$ and $\epsilon = 10^{-4}$. This is a bit different from the default Adam settings in keras, which has $\epsilon=10^{-7}$.  
+
 ## TODO:
 Extend to two stochastic layers  
 Implement [DReG](https://arxiv.org/abs/1810.04152)  
