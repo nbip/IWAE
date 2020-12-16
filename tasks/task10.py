@@ -200,7 +200,7 @@ for _step, x_batch in enumerate(train_dataset):
     break
 
 
-res = model(x_batch, 100)
+res = model(x_batch, 1)
 
 print(res["vae_a"],
       res["vae_b"],
