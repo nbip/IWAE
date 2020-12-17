@@ -31,6 +31,7 @@ parser.add_argument("--epochs", type=int, default=-1,
                          "will be set based on the learning rate scheme from the paper")
 parser.add_argument("--gpu", type=str, default='0', help="Choose GPU")
 args = parser.parse_args()
+print(args)
 
 # ---- set the visible GPU devices
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
@@ -68,6 +69,8 @@ else:
     epochs = args.epochs
     learning_rates = []
     learning_rates.append(0.0001)
+
+epochs += 1800
 
 # ---- experiment settings
 n_latent1 = args.n_latent1
@@ -330,13 +333,12 @@ best = float(-np.inf)
 
 train_history = []
 
+# ---- we'll binarize the training data during training,
+# ---- individually for each batch, dynamic binarization
+train_dataset = (tf.data.Dataset.from_tensor_slices(Xtrain)
+    .shuffle(Ntrain).batch(batch_size))
+
 for epoch in range(epochs):
-
-    # ---- binarize the training data at the start of each epoch
-    Xtrain_binarized = utils.bernoullisample(Xtrain)
-
-    train_dataset = (tf.data.Dataset.from_tensor_slices(Xtrain_binarized)
-        .shuffle(Ntrain).batch(batch_size))
 
     # ---- check if the learning rate needs to be updated
     if args.epochs == -1 and np.sum(epoch == np.asarray(learning_rate_change_epoch)) > 0:
@@ -348,8 +350,9 @@ for epoch in range(epochs):
         print("Changing learning rate from {0} to {1}".format(old_learning_rate, new_learning_rate))
         optimizer.learning_rate.assign(new_learning_rate)
 
-    for _step, x_batch in enumerate(train_dataset):
+    for _step, _x_batch in enumerate(train_dataset):
         step = _step + steps_pr_epoch * epoch
+        x_batch = np.random.binomial(1, _x_batch)
 
         # ---- one training step
         res = train_step(model, x_batch, n_samples, optimizer)

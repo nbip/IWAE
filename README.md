@@ -51,7 +51,9 @@ The Doubly Reparameterized Gradient Estimator for Monte Carlo Objectives, [DReG]
 `task07.py`: Use a 2D latent space to investigate both true and variational posteriors. We can use *self-normalized importance sampling* to estimate posterior means and *sampling importance resampling* to draw samples from the true posterior.  
 
 ### Two stochastic layers
-See [Ladder VAE](https://arxiv.org/pdf/1602.02282.pdf) and accompanying [github](https://github.com/casperkaae/LVAE) and [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders/blob/master/model/vae_models.py)
+See [Ladder VAE](https://arxiv.org/pdf/1602.02282.pdf) and accompanying [github](https://github.com/casperkaae/LVAE) and [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders/blob/master/model/vae_models.py).  
+
+[xqding](https://github.com/xqding/Importance_Weighted_Autoencoders) and []ShwanMario](https://github.com/ShwanMario/IWAE) train IWAEs with two stochastic layers, bot without reaching Yburdas results. But with better results than me. They use a different training setup then me, in order to check my implementation I will try to reproduce their results instead. Specifically I will start with xqding, batch-size 1000 and 5000 epochs.
 
 ## Comparisons
 A number of other repositories have reproduced these results, see for example  
@@ -70,7 +72,13 @@ IWAE vs analytical VAE
 IWAE eq 8 vs eq 14
 
 In the paper, the initalizer from [Glorot & Bengeio (2010)](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf?source=post_page---------------------------) is used to initialize hidden layers. This is also the keras default initializer, which has also been used here.  
-The paper uses Adam optimizer [Kingma & Ba](https://arxiv.org/abs/1412.6980), with $\beta_1 = 0.9$, $\beta_2=0.999$ and $\epsilon = 10^{-4}$. This is a bit different from the default Adam settings in keras, which has $\epsilon=10^{-7}$.  
+The paper uses Adam optimizer [Kingma & Ba](https://arxiv.org/abs/1412.6980), with $\beta_1 = 0.9$, $\beta_2=0.999$ and $\epsilon = 10^{-4}$. This is a bit different from the default Adam settings in keras, which has $\epsilon=10^{-7}$. This turned out not to make any difference.  
+
+## Issues:
+
+Is using eq 8 and eq 14 for training equivalent? It seems so I trained task07 using eq 8 and task 11 using eq 14, to get the same marginal llh results. However, you cannot use eq 8 to evaluate the marginal LLH. They are only equivalent in terms of gradients. Well, when $k=1$, they are also equivalent in terms of marginal LLH estimate.  
+
+Note that pytorch dataloaders makes it easier to work with dynamically binarized mnist, see [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders/blob/master/model/vae_models.py)
 
 ## TODO:
 Extend to two stochastic layers  
