@@ -70,7 +70,9 @@ else:
     learning_rates = []
     learning_rates.append(0.0001)
 
-epochs += 1800
+learning_rates.append(0.0001)
+learning_rates.append(0.0001)
+epochs += 10000
 
 # ---- experiment settings
 n_latent1 = args.n_latent1
