@@ -80,6 +80,18 @@ Is using eq 8 and eq 14 for training equivalent? It seems so I trained task07 us
 
 Note that pytorch dataloaders makes it easier to work with dynamically binarized mnist, see [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders/blob/master/model/vae_models.py)
 
+## Resources:
+https://github.com/addtt/ladder-vae-pytorch  
+https://github.com/xqding/Importance_Weighted_Autoencoders  
+https://github.com/yburda/iwae  
+https://github.com/ShwanMario/IWAE  
+https://github.com/AntixK/PyTorch-VAE  
+https://paperswithcode.com/paper/importance-weighted-autoencoders  
+https://github.com/casperkaae/LVAE/blob/master/run_models.py  
+https://github.com/yoonholee/pytorch-vae  
+https://github.com/abdulfatir/IWAE-tensorflow  
+https://github.com/xqding/AIWAE  
+
 ## TODO:
 Extend to two stochastic layers  
 Implement [DReG](https://arxiv.org/abs/1810.04152)  

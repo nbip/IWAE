@@ -59,6 +59,28 @@ def static_binarization_mnist(fashion=False):
     return Xtrain, Xval, Xtest, ytrain, yval, ytest
 
 
+def dynamic_binarization_mnist():
+    # ---- load data
+    (Xtrain, ytrain), (Xtest, ytest) = keras.datasets.mnist.load_data()
+
+    # ---- create validation set
+    Xval = Xtrain[-10000:]
+    Xtrain = Xtrain[:-10000]
+    yval = ytrain[-10000:]
+    ytrain = ytrain[:-10000]
+
+    Ntrain = Xtrain.shape[0]
+    Nval = Xval.shape[0]
+    Ntest = Xtest.shape[0]
+
+    # ---- reshape to vectors
+    Xtrain = Xtrain.reshape(Ntrain, -1) / 255
+    Xval = Xval.reshape(Nval, -1) / 255
+    Xtest = Xtest.reshape(Ntest, -1) / 255
+
+    return (Xtrain, ytrain), (Xval, yval), (Xtest, ytest)
+
+
 def mnist(fashion=False):
 
     # ---- load data
@@ -171,3 +193,17 @@ class MyMetric():
     def reset_states(self):
         self.VALUES = []
         self.N = []
+
+
+class MyMetric2():
+    def __init__(self):
+        self.VALUES = []
+
+    def update_state(self, losses):
+        self.VALUES.append(losses)
+
+    def result(self):
+        return tf.reduce_mean(self.VALUES, axis=0)
+
+    def reset_states(self):
+        self.VALUES = []
