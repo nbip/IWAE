@@ -27,6 +27,7 @@ parser.add_argument("--epochs", type=int, default=-1,
                          "will be set based on the learning rate scheme from the paper")
 parser.add_argument("--gpu", type=str, default='0', help="Choose GPU")
 args = parser.parse_args()
+print(args)
 
 # ---- set the visible GPU devices
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu

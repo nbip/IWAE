@@ -91,6 +91,10 @@ https://github.com/casperkaae/LVAE/blob/master/run_models.py
 https://github.com/yoonholee/pytorch-vae  
 https://github.com/abdulfatir/IWAE-tensorflow  
 https://github.com/xqding/AIWAE  
+https://arxiv.org/pdf/1602.02282.pdf  
+https://arxiv.org/pdf/1509.00519.pdf  
+https://github.com/casperkaae/parmesan  
+https://github.com/casperkaae/LVAE/blob/master/run_models.py  
 
 ## TODO:
 Extend to two stochastic layers  

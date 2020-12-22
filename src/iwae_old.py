@@ -47,7 +47,7 @@ class Encoder(tf.keras.Model):
 
         qz1x = self.encode_x_to_z1(x)
 
-        z1 = qz1x.sample(n_samples)
+        z1 = qz1x.sample()
 
         qz2z1 = self.encode_z1_to_z2(z1)
 
@@ -128,34 +128,23 @@ class IWAE(tf.keras.Model):
 
         kl2 = tf.reduce_sum(tfd.kl_divergence(qz2z1, pz2), axis=-1)
 
-        # kl2_check = - 0.5 * (1 + tf.math.log(qz2z1.scale ** 2) - qz2z1.loc ** 2 - qz2z1.scale ** 2 )
+        kl2_check = - 0.5 * (1 + tf.math.log(qz2z1.scale ** 2) - qz2z1.loc ** 2 - qz2z1.scale ** 2 )
 
-        # mean over batch and samples
-        vae_elbo = tf.reduce_mean(lpxz1 - kl1 - kl2, axis=[0, 1])
+        # vae_elbo = tf.reduce_mean(lpxz1 - kl1 - kl2, axis=-1)
+        vae_elbo = tf.reduce_mean(lpxz1 - beta * kl1 - beta * kl2, axis=-1)
 
-        beta_vae_elbo = tf.reduce_mean(lpxz1 - beta * kl1 - beta * kl2, axis=[0, 1])
+        # mean over minibatch
+        loss = -vae_elbo
 
         # log weights
         log_w = lpxz1 + lpz1z2 + lpz2 - lqz1x - lqz2z1
 
-        # IWAE elbos
-        iwae_elbo = tf.reduce_mean(logmeanexp(log_w, axis=0), axis=-1)
-
-        # beta_iwae_elbo = tf.reduce_mean(
-        #     logmeanexp(lpxz1 + beta * (lpz1z2 + lpz2) - lqz1x - lqz2z1, axis=0), axis=-1) +\
-        #     tf.reduce_mean((1 - beta) * (lqz1x + lqz2z1), axis=[0, 1])
-
-        beta_iwae_elbo = tf.reduce_mean(
-            logmeanexp(lpxz1 + beta * (lpz1z2 + lpz2 - lqz1x - lqz2z1), axis=0), axis=-1)
-
-        # mean over minibatch
-        loss = -beta_iwae_elbo
+        # loss comparison
+        iwae_elbo = tf.reduce_mean(log_w, axis=-1)
 
         return {"loss": loss,
-                "vae_elbo": vae_elbo,
-                "beta_vae_elbo": beta_vae_elbo,
-                "iwae_elbo": iwae_elbo,
-                "beta_iwae_elbo": beta_iwae_elbo,
+                "elbo": vae_elbo,
+                "elbo2": iwae_elbo,
                 "kl1": kl1,
                 "kl2": kl2,
                 "z1": z1,

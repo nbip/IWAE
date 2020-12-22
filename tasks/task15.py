@@ -84,10 +84,10 @@ x = Xtrain[:batch_size, :]
 
 # ---- train step
 @tf.function
-def train_step(model, x, n_samples, optimizer):
+def train_step(model, x, n_samples, beta, optimizer):
 
     with tf.GradientTape() as tape:
-        res = model(x, n_samples)
+        res = model(x, n_samples, beta)
         loss = res["loss"]
 
     grads = tape.gradient(loss, model.trainable_weights)
@@ -98,14 +98,14 @@ def train_step(model, x, n_samples, optimizer):
 
 # ---- val step
 @tf.function
-def val_step(model, x, n_samples):
-    return model(x, n_samples)
+def val_step(model, x, n_samples, beta):
+    return model(x, n_samples, beta)
 
 
 # ---- prepare tensorboard
 current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-train_log_dir = "/tmp/iwae/task12/" + current_time + "/train"
-val_log_dir = "/tmp/iwae/task12/" + current_time + "/val"
+train_log_dir = "/tmp/iwae/task15/" + current_time + "/train"
+val_log_dir = "/tmp/iwae/task15/" + current_time + "/val"
 train_summary_writer = tf.summary.create_file_writer(train_log_dir)
 val_summary_writer = tf.summary.create_file_writer(val_log_dir)
 
@@ -129,8 +129,10 @@ Xval = utils.bernoullisample(Xval)
 val_dataset = (tf.data.Dataset.from_tensor_slices(Xval)
                .shuffle(Nval).batch(1000))
 
-val_elbo_metric = utils.MyMetric2()
-val_elbo2_metric = utils.MyMetric2()
+val_vae_elbo_metric = utils.MyMetric2()
+val_beta_vae_elbo_metric = utils.MyMetric2()
+val_iwae_elbo_metric = utils.MyMetric2()
+val_beta_iwae_elbo_metric = utils.MyMetric2()
 val_lpxz1_metric = utils.MyMetric()
 val_lpz1z2_metric = utils.MyMetric()
 val_lpz2_metric = utils.MyMetric()
@@ -164,16 +166,19 @@ for epoch in range(epochs):
     for _step, x_batch in enumerate(train_dataset):
         step = _step + steps_pr_epoch * epoch
 
+        beta = np.min([step / 200000, 1.0]).astype(np.float32)
+
         # ---- one training step
-        res = train_step(model, x_batch, n_samples, optimizer)
+        res = train_step(model, x_batch, n_samples, beta, optimizer)
 
         if step % 200 == 0:
-            train_history.append(res["elbo"].numpy().mean())
 
             # ---- write training stats to tensorboard
             with train_summary_writer.as_default():
-                tf.summary.scalar('Evaluation/elbo', res["elbo"], step=step)
-                tf.summary.scalar('Evaluation/elbo2', res["elbo2"], step=step)
+                tf.summary.scalar('Evaluation/vae_elbo', res["vae_elbo"], step=step)
+                tf.summary.scalar('Evaluation/beta_vae_elbo', res["beta_vae_elbo"], step=step)
+                tf.summary.scalar('Evaluation/iwae_elbo', res["iwae_elbo"], step=step)
+                tf.summary.scalar('Evaluation/beta_iwae_elbo', res["beta_iwae_elbo"], step=step)
                 tf.summary.scalar('Evaluation/lpxz1', res['lpxz1'].numpy().mean(), step=step)
                 tf.summary.scalar('Evaluation/lpz1z2', res['lpz1z2'].numpy().mean(), step=step)
                 tf.summary.scalar('Evaluation/lqz1x', res['lqz1x'].numpy().mean(), step=step)
@@ -182,21 +187,27 @@ for epoch in range(epochs):
 
             # ---- collect validation stats
             for x_val_batch in val_dataset:
-                val_res = val_step(model, x_val_batch, n_samples)
+                val_res = val_step(model, x_val_batch, n_samples, beta)
 
-                val_elbo_metric.update_state(val_res["elbo"])
-                val_elbo2_metric.update_state(val_res["elbo2"])
-                val_lpxz1_metric.update_state(val_res['lpxz1'])
-                val_lpz1z2_metric.update_state(val_res['lpz1z2'])
-                val_lpz2_metric.update_state(val_res['lpz2'])
-                val_lqz1x_metric.update_state(val_res['lqz1x'])
-                val_lqz2z1_metric.update_state(val_res['lqz2z1'])
+                val_vae_elbo_metric.update_state(val_res["vae_elbo"])
+                val_beta_vae_elbo_metric.update_state(val_res["beta_vae_elbo"])
+                val_iwae_elbo_metric.update_state(val_res["iwae_elbo"])
+                val_beta_iwae_elbo_metric.update_state(val_res["beta_iwae_elbo"])
+                val_lpxz1_metric.update_state(val_res['lpxz1'].numpy().mean(0))
+                val_lpz1z2_metric.update_state(val_res['lpz1z2'].numpy().mean(0))
+                val_lpz2_metric.update_state(val_res['lpz2'].numpy().mean(0))
+                val_lqz1x_metric.update_state(val_res['lqz1x'].numpy().mean(0))
+                val_lqz2z1_metric.update_state(val_res['lqz2z1'].numpy().mean(0))
 
             # ---- summarize the results over the batches and reset the metrics
-            val_elbo = val_elbo_metric.result()
-            val_elbo_metric.reset_states()
-            val_elbo2 = val_elbo2_metric.result()
-            val_elbo2_metric.reset_states()
+            val_vae_elbo = val_vae_elbo_metric.result()
+            val_vae_elbo_metric.reset_states()
+            val_beta_vae_elbo = val_beta_vae_elbo_metric.result()
+            val_beta_vae_elbo_metric.reset_states()
+            val_iwae_elbo = val_iwae_elbo_metric.result()
+            val_iwae_elbo_metric.reset_states()
+            val_beta_iwae_elbo = val_beta_iwae_elbo_metric.result()
+            val_beta_iwae_elbo_metric.reset_states()
             val_lpxz1 = val_lpxz1_metric.result()
             val_lpxz1_metric.reset_states()
             val_lpz1z2 = val_lpz1z2_metric.result()
@@ -210,28 +221,34 @@ for epoch in range(epochs):
 
             # ---- write val stats to tensorboard
             with val_summary_writer.as_default():
-                tf.summary.scalar('Evaluation/elbo', val_elbo, step=step)
-                tf.summary.scalar('Evaluation/elbo2', val_elbo2, step=step)
+                tf.summary.scalar('Evaluation/vae_elbo', val_vae_elbo, step=step)
+                tf.summary.scalar('Evaluation/beta_vae_elbo', val_beta_vae_elbo, step=step)
+                tf.summary.scalar('Evaluation/iwae_elbo', val_iwae_elbo, step=step)
+                tf.summary.scalar('Evaluation/beta_iwae_elbo', val_beta_iwae_elbo, step=step)
                 tf.summary.scalar('Evaluation/lpxz1', val_lpxz1, step=step)
                 tf.summary.scalar('Evaluation/lpz1z2', val_lpz1z2, step=step)
                 tf.summary.scalar('Evaluation/lqz1x', val_lqz1x, step=step)
                 tf.summary.scalar('Evaluation/lqz2z1', val_lqz2z1, step=step)
                 tf.summary.scalar('Evaluation/lpz2', val_lpz2, step=step)
+                tf.summary.scalar('Evaluation/beta', beta, step=step)
 
             # ---- save the model if the validation loss improves
-            if val_elbo > best:
+            if val_iwae_elbo > best and beta == 1:
                 print("saving model...")
-                model.save_weights('/tmp/iwae/task12/best_weights' + '_nsamples_{}'.format(n_samples))
-                best = val_elbo
+                model.save_weights('/tmp/iwae/task15/best_weights' + '_nsamples_{}'.format(n_samples))
+                best = val_iwae_elbo
 
             took = time.time() - start
             start = time.time()
 
             print("epoch {0}/{1}, step {2}/{3}, train ELBO: {4:.2f}, val ELBO: {5:.2f}, time: {6:.2f}"
-                  .format(epoch, epochs, step, total_steps, res["elbo"].numpy(), val_elbo.numpy(), took))
+                  .format(epoch, epochs, step, total_steps, res["iwae_elbo"].numpy(), val_iwae_elbo.numpy(), took))
 
 # ---- save final weights
-model.save_weights('/tmp/iwae/task12/final_weights' + '_nsamples_{}'.format(n_samples))
+model.save_weights('/tmp/iwae/task15/final_weights' + '_nsamples_{}'.format(n_samples))
+
+# ---- load the best or the final weights?
+# model.load_weights('/tmp/iwae/task15/best_weights' + '_nsamples_{}'.format(n_samples))
 
 # ---- test-set llh estimate using 5000 samples
 test_elbo_metric = utils.MyMetric()
@@ -243,7 +260,7 @@ Xtest = utils.bernoullisample(Xtest)
 # ---- since we are using 5000 importance samples we have to loop over each element of the test-set
 for i, x in enumerate(Xtest):
     res = model(x[None, :].astype(np.float32), L)
-    test_elbo_metric.update_state(res['elbo'][None, None])
+    test_elbo_metric.update_state(res['iwae_elbo'][None, None])
     if i % 200 == 0:
         print("{0}/{1}".format(i, Ntest))
 

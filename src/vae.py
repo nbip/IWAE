@@ -47,7 +47,7 @@ class Encoder(tf.keras.Model):
 
         qz1x = self.encode_x_to_z1(x)
 
-        z1 = qz1x.sample(n_samples)
+        z1 = qz1x.sample()
 
         qz2z1 = self.encode_z1_to_z2(z1)
 
@@ -91,14 +91,14 @@ class Decoder(tf.keras.Model):
         return logits, pxz1, pz1z2
 
 
-class IWAE(tf.keras.Model):
+class VAE(tf.keras.Model):
     def __init__(self,
                  n_hidden1,
                  n_hidden2,
                  n_latent1,
                  n_latent2,
                  **kwargs):
-        super(IWAE, self).__init__(**kwargs)
+        super(VAE, self).__init__(**kwargs)
 
         self.encoder = Encoder(n_hidden1, n_hidden2, n_latent1, n_latent2)
         self.decoder = Decoder(n_hidden1, n_hidden2, n_latent1)
@@ -130,26 +130,19 @@ class IWAE(tf.keras.Model):
 
         # kl2_check = - 0.5 * (1 + tf.math.log(qz2z1.scale ** 2) - qz2z1.loc ** 2 - qz2z1.scale ** 2 )
 
-        # mean over batch and samples
-        vae_elbo = tf.reduce_mean(lpxz1 - kl1 - kl2, axis=[0, 1])
-
-        beta_vae_elbo = tf.reduce_mean(lpxz1 - beta * kl1 - beta * kl2, axis=[0, 1])
+        vae_elbo = tf.reduce_mean(lpxz1 - kl1 - kl2, axis=-1)
+        beta_vae_elbo = tf.reduce_mean(lpxz1 - beta * kl1 - beta * kl2, axis=-1)
 
         # log weights
         log_w = lpxz1 + lpz1z2 + lpz2 - lqz1x - lqz2z1
 
-        # IWAE elbos
-        iwae_elbo = tf.reduce_mean(logmeanexp(log_w, axis=0), axis=-1)
-
-        # beta_iwae_elbo = tf.reduce_mean(
-        #     logmeanexp(lpxz1 + beta * (lpz1z2 + lpz2) - lqz1x - lqz2z1, axis=0), axis=-1) +\
-        #     tf.reduce_mean((1 - beta) * (lqz1x + lqz2z1), axis=[0, 1])
-
-        beta_iwae_elbo = tf.reduce_mean(
-            logmeanexp(lpxz1 + beta * (lpz1z2 + lpz2 - lqz1x - lqz2z1), axis=0), axis=-1)
+        # loss comparison
+        iwae_elbo = tf.reduce_mean(log_w, axis=-1)
+        beta_iwae_elbo = tf.reduce_mean(lpxz1 + beta * (lpz1z2 + lpz2) - lqz1x - lqz2z1, axis=-1) +\
+                         tf.reduce_mean((1 - beta) * (lqz1x + lqz2z1), axis=-1)
 
         # mean over minibatch
-        loss = -beta_iwae_elbo
+        loss = -beta_vae_elbo
 
         return {"loss": loss,
                 "vae_elbo": vae_elbo,

@@ -13,7 +13,7 @@ import sys
 sys.path.insert(0, '../src')
 sys.path.insert(0, '/home/nbip/proj/python/python-TF2/tf2-01/notebooks/IWAE/src')
 import utils
-import iwae
+import vae
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--n_latent1", type=int, default=100, help="number of latent space dimensions in 1st stochastic layer")
@@ -27,6 +27,7 @@ parser.add_argument("--epochs", type=int, default=-1,
                          "will be set based on the learning rate scheme from the paper")
 parser.add_argument("--gpu", type=str, default='0', help="Choose GPU")
 args = parser.parse_args()
+print(args)
 
 # ---- set the visible GPU devices
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
@@ -97,7 +98,7 @@ def train_step(model, x, n_samples, beta, optimizer):
 
 # ---- val step
 @tf.function
-def val_step(model, x, beta, n_samples):
+def val_step(model, x, n_samples, beta):
     return model(x, n_samples, beta)
 
 
@@ -112,7 +113,7 @@ steps_pr_epoch = Ntrain // batch_size
 total_steps = steps_pr_epoch * epochs
 
 # ---- instantiate the model, optimizer and metrics
-model = iwae.IWAE(n_hidden1,
+model = vae.VAE(n_hidden1,
                   n_hidden2,
                   n_latent1,
                   n_latent2)
@@ -128,8 +129,10 @@ Xval = utils.bernoullisample(Xval)
 val_dataset = (tf.data.Dataset.from_tensor_slices(Xval)
                .shuffle(Nval).batch(1000))
 
-val_elbo_metric = utils.MyMetric2()
-val_elbo2_metric = utils.MyMetric2()
+val_vae_elbo_metric = utils.MyMetric2()
+val_beta_vae_elbo_metric = utils.MyMetric2()
+val_iwae_elbo_metric = utils.MyMetric2()
+val_beta_iwae_elbo_metric = utils.MyMetric2()
 val_lpxz1_metric = utils.MyMetric()
 val_lpz1z2_metric = utils.MyMetric()
 val_lpz2_metric = utils.MyMetric()
@@ -169,12 +172,13 @@ for epoch in range(epochs):
         res = train_step(model, x_batch, n_samples, beta, optimizer)
 
         if step % 200 == 0:
-            train_history.append(res["elbo"].numpy().mean())
 
             # ---- write training stats to tensorboard
             with train_summary_writer.as_default():
-                tf.summary.scalar('Evaluation/elbo', res["elbo"], step=step)
-                tf.summary.scalar('Evaluation/elbo2', res["elbo2"], step=step)
+                tf.summary.scalar('Evaluation/vae_elbo', res["vae_elbo"], step=step)
+                tf.summary.scalar('Evaluation/beta_vae_elbo', res["beta_vae_elbo"], step=step)
+                tf.summary.scalar('Evaluation/iwae_elbo', res["iwae_elbo"], step=step)
+                tf.summary.scalar('Evaluation/beta_iwae_elbo', res["beta_iwae_elbo"], step=step)
                 tf.summary.scalar('Evaluation/lpxz1', res['lpxz1'].numpy().mean(), step=step)
                 tf.summary.scalar('Evaluation/lpz1z2', res['lpz1z2'].numpy().mean(), step=step)
                 tf.summary.scalar('Evaluation/lqz1x', res['lqz1x'].numpy().mean(), step=step)
@@ -185,8 +189,10 @@ for epoch in range(epochs):
             for x_val_batch in val_dataset:
                 val_res = val_step(model, x_val_batch, n_samples, beta)
 
-                val_elbo_metric.update_state(val_res["elbo"])
-                val_elbo2_metric.update_state(val_res["elbo2"])
+                val_vae_elbo_metric.update_state(val_res["vae_elbo"])
+                val_beta_vae_elbo_metric.update_state(val_res["beta_vae_elbo"])
+                val_iwae_elbo_metric.update_state(val_res["iwae_elbo"])
+                val_beta_iwae_elbo_metric.update_state(val_res["beta_iwae_elbo"])
                 val_lpxz1_metric.update_state(val_res['lpxz1'])
                 val_lpz1z2_metric.update_state(val_res['lpz1z2'])
                 val_lpz2_metric.update_state(val_res['lpz2'])
@@ -194,10 +200,14 @@ for epoch in range(epochs):
                 val_lqz2z1_metric.update_state(val_res['lqz2z1'])
 
             # ---- summarize the results over the batches and reset the metrics
-            val_elbo = val_elbo_metric.result()
-            val_elbo_metric.reset_states()
-            val_elbo2 = val_elbo2_metric.result()
-            val_elbo2_metric.reset_states()
+            val_vae_elbo = val_vae_elbo_metric.result()
+            val_vae_elbo_metric.reset_states()
+            val_beta_vae_elbo = val_beta_vae_elbo_metric.result()
+            val_beta_vae_elbo_metric.reset_states()
+            val_iwae_elbo = val_iwae_elbo_metric.result()
+            val_iwae_elbo_metric.reset_states()
+            val_beta_iwae_elbo = val_beta_iwae_elbo_metric.result()
+            val_beta_iwae_elbo_metric.reset_states()
             val_lpxz1 = val_lpxz1_metric.result()
             val_lpxz1_metric.reset_states()
             val_lpz1z2 = val_lpz1z2_metric.result()
@@ -211,8 +221,10 @@ for epoch in range(epochs):
 
             # ---- write val stats to tensorboard
             with val_summary_writer.as_default():
-                tf.summary.scalar('Evaluation/elbo', val_elbo, step=step)
-                tf.summary.scalar('Evaluation/elbo2', val_elbo2, step=step)
+                tf.summary.scalar('Evaluation/vae_elbo', val_vae_elbo, step=step)
+                tf.summary.scalar('Evaluation/beta_vae_elbo', val_beta_vae_elbo, step=step)
+                tf.summary.scalar('Evaluation/iwae_elbo', val_iwae_elbo, step=step)
+                tf.summary.scalar('Evaluation/beta_iwae_elbo', val_beta_iwae_elbo, step=step)
                 tf.summary.scalar('Evaluation/lpxz1', val_lpxz1, step=step)
                 tf.summary.scalar('Evaluation/lpz1z2', val_lpz1z2, step=step)
                 tf.summary.scalar('Evaluation/lqz1x', val_lqz1x, step=step)
@@ -221,19 +233,22 @@ for epoch in range(epochs):
                 tf.summary.scalar('Evaluation/beta', beta, step=step)
 
             # ---- save the model if the validation loss improves
-            if val_elbo > best:
+            if val_vae_elbo > best and beta == 1:
                 print("saving model...")
                 model.save_weights('/tmp/iwae/task14/best_weights' + '_nsamples_{}'.format(n_samples))
-                best = val_elbo
+                best = val_vae_elbo
 
             took = time.time() - start
             start = time.time()
 
             print("epoch {0}/{1}, step {2}/{3}, train ELBO: {4:.2f}, val ELBO: {5:.2f}, time: {6:.2f}"
-                  .format(epoch, epochs, step, total_steps, res["elbo"].numpy(), val_elbo.numpy(), took))
+                  .format(epoch, epochs, step, total_steps, res["vae_elbo"].numpy(), val_vae_elbo.numpy(), took))
 
 # ---- save final weights
 model.save_weights('/tmp/iwae/task14/final_weights' + '_nsamples_{}'.format(n_samples))
+
+# ---- load the best or the final weights?
+# model.load_weights('/tmp/iwae/task14/best_weights' + '_nsamples_{}'.format(n_samples))
 
 # ---- test-set llh estimate using 5000 samples
 test_elbo_metric = utils.MyMetric()
@@ -245,7 +260,7 @@ Xtest = utils.bernoullisample(Xtest)
 # ---- since we are using 5000 importance samples we have to loop over each element of the test-set
 for i, x in enumerate(Xtest):
     res = model(x[None, :].astype(np.float32), L)
-    test_elbo_metric.update_state(res['elbo'][None, None])
+    test_elbo_metric.update_state(res['iwae_elbo'][None, None])
     if i % 200 == 0:
         print("{0}/{1}".format(i, Ntest))
 
