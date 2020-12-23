@@ -207,3 +207,37 @@ class MyMetric2():
 
     def reset_states(self):
         self.VALUES = []
+
+
+def generate_and_save_images(model, z2, epoch, string):
+
+    # ---- plot settings
+    plt.rcParams["font.family"] = "serif"
+    plt.rcParams['font.size'] = 15.0
+    plt.rcParams['axes.spines.right'] = False
+    plt.rcParams['axes.spines.top'] = False
+    plt.rcParams['savefig.format'] = 'pdf'
+    plt.rcParams['lines.linewidth'] = 2.5
+    plt.rcParams['figure.autolayout'] = True
+
+    x_samples, x_probs = model.sample(z2)
+    x_samples = x_samples.numpy().squeeze()
+    x_probs = x_probs.numpy().squeeze()
+
+    n = int(np.sqrt(x_samples.shape[0]))
+
+    canvas = np.zeros((n * 28, 2 * n * 28))
+
+    for i in range(n):
+        for j in range(n):
+            canvas[i * 28: (i + 1) * 28, j * 28: (j + 1) * 28] = x_samples[i * n + j].reshape(28, 28)
+            canvas[i * 28: (i + 1) * 28, n * 28 + j * 28: n * 28 + (j + 1) * 28] = x_probs[i * n + j].reshape(28, 28)
+
+    plt.clf()
+    plt.figure(figsize=(20, 10))
+    plt.imshow(canvas, cmap='gray_r')
+    plt.title("epoch {:04d}".format(epoch))
+    plt.axis('off')
+    plt.savefig(string + 'image_at_epoch_{:04d}.png'.format(epoch))
+    plt.close()
+

@@ -23,6 +23,7 @@ parser.add_argument("--epochs", type=int, default=-1,
                          "will be set based on the learning rate scheme from the paper")
 parser.add_argument("--gpu", type=str, default='0', help="Choose GPU")
 args = parser.parse_args()
+print(args)
 
 # ---- set the visible GPU devices
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
@@ -95,10 +96,6 @@ def train_step(model, x, n_samples, optimizer):
 current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 train_log_dir = "/tmp/iwae/main/" + current_time + "/train"
 train_summary_writer = tf.summary.create_file_writer(train_log_dir)
-
-# ---- prepare the data
-Ntrain = Xtrain.shape[0]
-Ntest = Xtest.shape[0]
 
 steps_pr_epoch = Ntrain // batch_size
 total_steps = steps_pr_epoch * epochs

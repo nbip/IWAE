@@ -166,3 +166,36 @@ class IWAE(tf.keras.Model):
                 "lpz2": lpz2,
                 "lqz1x": lqz1x,
                 "lqz2z1": lqz2z1}
+
+    @tf.function
+    def train_step(self, x, n_samples, beta, optimizer):
+        with tf.GradientTape() as tape:
+            res = self.call(x, n_samples, beta)
+            loss = res["loss"]
+
+        grads = tape.gradient(loss, self.trainable_weights)
+        optimizer.apply_gradients(zip(grads, self.trainable_weights))
+
+        return res
+
+    @tf.function
+    def val_step(self, x, n_samples, beta):
+        return self.call(x, n_samples, beta)
+
+    def sample(self, z2):
+
+        pz1z2 = self.decoder.decode_z2_to_z1(z2)
+
+        z1 = pz1z2.sample()
+
+        logits = self.decoder.decode_z1_to_x(z1)
+
+        probs = tf.nn.sigmoid(logits)
+
+        pxz1 = tfd.Bernoulli(logits=logits)
+
+        x_sample = pxz1.sample()
+
+        return x_sample, probs
+
+
