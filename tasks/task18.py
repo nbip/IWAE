@@ -78,8 +78,10 @@ total_steps = steps_pr_epoch * epochs
 
 # ---- prepare tensorboard
 current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-train_log_dir = "/tmp/iwae/task16/" + current_time + "/train"
+train_log_dir = "/tmp/iwae/task18/" + current_time + "/train"
 train_summary_writer = tf.summary.create_file_writer(train_log_dir)
+test_log_dir = "/tmp/iwae/task18/" + current_time + "/test"
+test_summary_writer = tf.summary.create_file_writer(test_log_dir)
 
 # ---- prepare plotting of samples during training
 # use the same samples from the prior throughout training
@@ -103,6 +105,14 @@ print("Initial learning rate: ", optimizer.learning_rate.numpy())
 start = time.time()
 best = float(-np.inf)
 
+# ---- binarize the test data
+# ---- we'll only do this once, while the training data is binarized at the
+# ---- start of each epoch
+Xtest = utils.bernoullisample(Xtest)
+
+# test_dataset = (tf.data.Dataset.from_tensor_slices(Xtest)
+#                .shuffle(Ntest).batch(1000))
+
 for epoch in range(epochs):
 
     # ---- binarize the training data at the start of each epoch
@@ -113,7 +123,7 @@ for epoch in range(epochs):
 
     # ---- plot samples from the prior at this epoch
     if epoch in plt_epochs:
-        utils.generate_and_save_images(model, z2, epoch, "task16_{}_".format(n_samples))
+        utils.generate_and_save_images(model, z2, epoch, "task18_{}_".format(n_samples))
 
     # ---- check if the learning rate needs to be updated
     if args.epochs == -1 and epoch in learning_rate_dict:
@@ -131,7 +141,7 @@ for epoch in range(epochs):
         beta = np.min([step / 200000, 1.0]).astype(np.float32)
 
         # ---- one training step
-        res = model.train_step(x_batch, n_samples, beta, optimizer)
+        res = model.train_step(x_batch, n_samples, beta, optimizer, loss_key="beta_iwae_elbo")
 
         if step % 200 == 0:
 
@@ -141,30 +151,44 @@ for epoch in range(epochs):
                 tf.summary.scalar('Evaluation/beta_vae_elbo', res["beta_vae_elbo"], step=step)
                 tf.summary.scalar('Evaluation/iwae_elbo', res["iwae_elbo"], step=step)
                 tf.summary.scalar('Evaluation/beta_iwae_elbo', res["beta_iwae_elbo"], step=step)
+                tf.summary.scalar('Evaluation/beta_iwae_elbo2', res["beta_iwae_elbo2"], step=step)
                 tf.summary.scalar('Evaluation/lpxz1', res['lpxz1'].numpy().mean(), step=step)
                 tf.summary.scalar('Evaluation/lpz1z2', res['lpz1z2'].numpy().mean(), step=step)
                 tf.summary.scalar('Evaluation/lqz1x', res['lqz1x'].numpy().mean(), step=step)
                 tf.summary.scalar('Evaluation/lqz2z1', res['lqz2z1'].numpy().mean(), step=step)
                 tf.summary.scalar('Evaluation/lpz2', res['lpz2'].numpy().mean(), step=step)
 
+            # ---- monitor the test-set
+            test_res = model.val_step(Xtest, n_samples, beta)
+
+            # ---- write test stats to tensorboard
+            with test_summary_writer.as_default():
+                tf.summary.scalar('Evaluation/vae_elbo', test_res["vae_elbo"], step=step)
+                tf.summary.scalar('Evaluation/beta_vae_elbo', test_res["beta_vae_elbo"], step=step)
+                tf.summary.scalar('Evaluation/iwae_elbo', test_res["iwae_elbo"], step=step)
+                tf.summary.scalar('Evaluation/beta_iwae_elbo', test_res["beta_iwae_elbo"], step=step)
+                tf.summary.scalar('Evaluation/beta_iwae_elbo2', test_res["beta_iwae_elbo2"], step=step)
+                tf.summary.scalar('Evaluation/lpxz1', test_res['lpxz1'].numpy().mean(), step=step)
+                tf.summary.scalar('Evaluation/lpz1z2', test_res['lpz1z2'].numpy().mean(), step=step)
+                tf.summary.scalar('Evaluation/lqz1x', test_res['lqz1x'].numpy().mean(), step=step)
+                tf.summary.scalar('Evaluation/lqz2z1', test_res['lqz2z1'].numpy().mean(), step=step)
+                tf.summary.scalar('Evaluation/lpz2', test_res['lpz2'].numpy().mean(), step=step)
+
             took = time.time() - start
             start = time.time()
 
-            print("epoch {0}/{1}, step {2}/{3}, train ELBO: {4:.2f}, time: {5:.2f}"
-                  .format(epoch, epochs, step, total_steps, res["iwae_elbo"].numpy(), took))
+            print("epoch {0}/{1}, step {2}/{3}, train ELBO: {4:.2f}, val ELBO: {5:.2f}, time: {6:.2f}"
+                  .format(epoch, epochs, step, total_steps, res["iwae_elbo"].numpy(), test_res["iwae_elbo"], took))
 
 # ---- save final weights
-model.save_weights('/tmp/iwae/task16/final_weights' + '_nsamples_{}'.format(n_samples))
+model.save_weights('/tmp/iwae/task18/final_weights' + '_nsamples_{}'.format(n_samples))
 
 # ---- load the final weights?
-# model.load_weights('/tmp/iwae/task16/final_weights' + '_nsamples_{}'.format(n_samples))
+# model.load_weights('/tmp/iwae/task18/final_weights' + '_nsamples_{}'.format(n_samples))
 
 # ---- test-set llh estimate using 5000 samples
 test_elbo_metric = utils.MyMetric()
 L = 5000
-
-# ---- binarize Xtest
-Xtest = utils.bernoullisample(Xtest)
 
 # ---- since we are using 5000 importance samples we have to loop over each element of the test-set
 for i, x in enumerate(Xtest):

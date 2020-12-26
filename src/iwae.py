@@ -141,21 +141,32 @@ class IWAE(tf.keras.Model):
         # IWAE elbos
         iwae_elbo = tf.reduce_mean(logmeanexp(log_w, axis=0), axis=-1)
 
-        # beta_iwae_elbo = tf.reduce_mean(
-        #     logmeanexp(lpxz1 + beta * (lpz1z2 + lpz2) - lqz1x - lqz2z1, axis=0), axis=-1) +\
-        #     tf.reduce_mean((1 - beta) * (lqz1x + lqz2z1), axis=[0, 1])
-
         beta_iwae_elbo = tf.reduce_mean(
             logmeanexp(lpxz1 + beta * (lpz1z2 + lpz2 - lqz1x - lqz2z1), axis=0), axis=-1)
 
-        # mean over minibatch
-        loss = -beta_iwae_elbo
+        # log_w with stopped gradients
+        beta_log_w = lpxz1 + beta * (lpz1z2 + lpz2 - lqz1x - lqz2z1)
+        log_w_stopped = tf.stop_gradient(beta_log_w)
+
+        # normalized importance weights
+        normalized_w = tf.nn.softmax(log_w_stopped, axis=0)
+
+        # the objective in eq 14
+        objective = tf.reduce_sum(normalized_w * beta_log_w, axis=0)
+
+        # average over batch
+        beta_iwae_elbo2 = tf.reduce_mean(objective, axis=-1)
+
+        # loss is the negative elbo
+        loss = -beta_iwae_elbo2
+        # loss = -beta_iwae_elbo
 
         return {"loss": loss,
                 "vae_elbo": vae_elbo,
                 "beta_vae_elbo": beta_vae_elbo,
                 "iwae_elbo": iwae_elbo,
                 "beta_iwae_elbo": beta_iwae_elbo,
+                "beta_iwae_elbo2": beta_iwae_elbo2,
                 "kl1": kl1,
                 "kl2": kl2,
                 "z1": z1,
@@ -168,15 +179,29 @@ class IWAE(tf.keras.Model):
                 "lqz2z1": lqz2z1}
 
     @tf.function
-    def train_step(self, x, n_samples, beta, optimizer):
-        with tf.GradientTape() as tape:
-            res = self.call(x, n_samples, beta)
-            loss = res["loss"]
+    def train_step(self, x, n_samples, beta, optimizer, loss_key=None):
 
-        grads = tape.gradient(loss, self.trainable_weights)
-        optimizer.apply_gradients(zip(grads, self.trainable_weights))
+        if loss_key is not None:
 
-        return res
+            with tf.GradientTape() as tape:
+                res = self.call(x, n_samples, beta)
+                loss = -res[loss_key]
+
+            grads = tape.gradient(loss, self.trainable_weights)
+            optimizer.apply_gradients(zip(grads, self.trainable_weights))
+
+            return res
+
+        else:
+
+            with tf.GradientTape() as tape:
+                res = self.call(x, n_samples, beta)
+                loss = res["loss"]
+
+            grads = tape.gradient(loss, self.trainable_weights)
+            optimizer.apply_gradients(zip(grads, self.trainable_weights))
+
+            return res
 
     @tf.function
     def val_step(self, x, n_samples, beta):
