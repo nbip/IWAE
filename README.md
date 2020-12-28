@@ -95,9 +95,10 @@ https://arxiv.org/pdf/1602.02282.pdf
 https://arxiv.org/pdf/1509.00519.pdf  
 https://arxiv.org/pdf/1902.02102.pdf  
 https://github.com/larsmaaloee/BIVA
- https://github.com/vlievin/biva-pytorch    
+https://github.com/vlievin/biva-pytorch    
 https://github.com/casperkaae/parmesan  
 https://github.com/casperkaae/LVAE/blob/master/run_models.py  
+https://arxiv.org/pdf/1802.04537.pdf
 
 ## TODO:
 Extend to two stochastic layers  
@@ -109,3 +110,6 @@ Implement MIWAE
 Show
 - SNIS
 - SIR
+2 layer:
+- posterior SNIS
+- PCA on the SNIS

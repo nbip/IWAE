@@ -123,75 +123,16 @@ class IWAE(tf.keras.Model):
 
         lpxz1 = tf.reduce_sum(pxz1.log_prob(x), axis=-1)
 
-        # ---- kl divergences
-        kl1 = tf.reduce_sum(tfd.kl_divergence(qz1x, pz1z2), axis=-1)
-
-        kl2 = tf.reduce_sum(tfd.kl_divergence(qz2z1, pz2), axis=-1)
-
-        # kl2_check = - 0.5 * (1 + tf.math.log(qz2z1.scale ** 2) - qz2z1.loc ** 2 - qz2z1.scale ** 2 )
-
-        # mean over batch and samples
-        vae_elbo = tf.reduce_mean(lpxz1 - kl1 - kl2, axis=[0, 1])
-
-        beta_vae_elbo = tf.reduce_mean(lpxz1 - beta * kl1 - beta * kl2, axis=[0, 1])
-
-        # log weights
         log_w = lpxz1 + lpz1z2 + lpz2 - lqz1x - lqz2z1
 
-        # IWAE elbos
+        # mean over samples and batch
+        vae_elbo = tf.reduce_mean(log_w)
+
+        # logmeanexp over samples and mean over batch
         iwae_elbo = tf.reduce_mean(logmeanexp(log_w, axis=0), axis=-1)
 
-        # # log_w with stopped gradients
-        # log_w_stopped = tf.stop_gradient(log_w)
-        #
-        # # normalized importance weights
-        # normalized_w = tf.nn.softmax(log_w_stopped, axis=0)
-        #
-        # # the objective in eq 14
-        # objective = tf.reduce_sum(normalized_w * log_w, axis=0)
-        #
-        # # average over batch
-        # iwae_elbo2 = tf.reduce_mean(objective, axis=-1)
-
-        # normalized importance weights
-        normalized_w = tf.nn.softmax(log_w - tf.reduce_max(log_w, axis=0, keepdims=True), axis=0)
-        normalized_w = tf.stop_gradient(normalized_w)
-
-        # the objective in eq 14
-        objective = tf.reduce_sum(normalized_w * log_w, axis=0)
-
-        # average over batch
-        iwae_elbo2 = tf.reduce_mean(objective, axis=-1)
-
-        beta_iwae_elbo = tf.reduce_mean(
-            logmeanexp(lpxz1 + beta * (lpz1z2 + lpz2 - lqz1x - lqz2z1), axis=0), axis=-1)
-
-        # log_w with stopped gradients
-        beta_log_w = lpxz1 + beta * (lpz1z2 + lpz2 - lqz1x - lqz2z1)
-        beta_log_w_stopped = tf.stop_gradient(beta_log_w)
-
-        # normalized importance weights
-        beta_normalized_w = tf.nn.softmax(beta_log_w_stopped, axis=0)
-
-        # the objective in eq 14
-        objective = tf.reduce_sum(beta_normalized_w * beta_log_w, axis=0)
-
-        # average over batch
-        beta_iwae_elbo2 = tf.reduce_mean(objective, axis=-1)
-
-        # loss is the negative elbo
-        loss = -beta_iwae_elbo2
-        # loss = -beta_iwae_elbo
-
-        return {"loss": loss,
-                "vae_elbo": vae_elbo,
-                "beta_vae_elbo": beta_vae_elbo,
+        return {"vae_elbo": vae_elbo,
                 "iwae_elbo": iwae_elbo,
-                "iwae_elbo2": iwae_elbo2,
-                "beta_iwae_elbo": beta_iwae_elbo,
-                "beta_iwae_elbo2": beta_iwae_elbo2,
-                "kl1": kl1,
-                "kl2": kl2,
                 "z1": z1,
                 "z2": z2,
                 "logits": logits,
@@ -202,29 +143,16 @@ class IWAE(tf.keras.Model):
                 "lqz2z1": lqz2z1}
 
     @tf.function
-    def train_step(self, x, n_samples, beta, optimizer, loss_key=None):
+    def train_step(self, x, n_samples, beta, optimizer, loss_key="vae_elbo"):
 
-        if loss_key is not None:
+        with tf.GradientTape() as tape:
+            res = self.call(x, n_samples, beta)
+            loss = -res[loss_key]
 
-            with tf.GradientTape() as tape:
-                res = self.call(x, n_samples, beta)
-                loss = -res[loss_key]
+        grads = tape.gradient(loss, self.trainable_weights)
+        optimizer.apply_gradients(zip(grads, self.trainable_weights))
 
-            grads = tape.gradient(loss, self.trainable_weights)
-            optimizer.apply_gradients(zip(grads, self.trainable_weights))
-
-            return res
-
-        else:
-
-            with tf.GradientTape() as tape:
-                res = self.call(x, n_samples, beta)
-                loss = res["loss"]
-
-            grads = tape.gradient(loss, self.trainable_weights)
-            optimizer.apply_gradients(zip(grads, self.trainable_weights))
-
-            return res
+        return res
 
     @tf.function
     def val_step(self, x, n_samples, beta):
