@@ -26,7 +26,7 @@ class BasicBlock(tf.keras.Model):
         q_mu = self.lmu(h2)
         q_std = self.lstd(h2)
 
-        qz_given_input = tfd.Normal(q_mu, q_std)
+        qz_given_input = tfd.Normal(q_mu, q_std + 1e-6)
 
         return qz_given_input
 
@@ -71,7 +71,7 @@ class Decoder(tf.keras.Model):
             [
                 tf.keras.layers.Dense(n_hidden1, activation=tf.nn.tanh),
                 tf.keras.layers.Dense(n_hidden1, activation=tf.nn.tanh),
-                tf.keras.layers.Dense(784, activation=tf.nn.sigmoid)
+                tf.keras.layers.Dense(784, activation=None)
             ]
         )
 
@@ -84,11 +84,11 @@ class Decoder(tf.keras.Model):
 
         pz1z2 = self.decode_z2_to_z1(z2)
 
-        probs = self.decode_z1_to_x(z1)
+        logits = self.decode_z1_to_x(z1)
 
-        pxz1 = tfd.Bernoulli(probs=probs)
+        pxz1 = tfd.Bernoulli(logits=logits)
 
-        return probs, pxz1, pz1z2
+        return logits, pxz1, pz1z2
 
 
 class IWAE(tf.keras.Model):
