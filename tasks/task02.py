@@ -23,6 +23,7 @@ parser.add_argument("--epochs", type=int, default=-1,
                          "will be set based on the learning rate scheme from the paper")
 parser.add_argument("--gpu", type=str, default='0', help="Choose GPU")
 args = parser.parse_args()
+print(args)
 
 # ---- set the visible GPU devices
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
@@ -80,7 +81,7 @@ Ntest = Xtest.shape[0]
 
 # ---- reshape to vectors
 Xtrain = Xtrain.reshape(Ntrain, -1) / 255
-Xval = Xtrain.reshape(Nval, -1) / 255
+Xval = Xval.reshape(Nval, -1) / 255
 Xtest = Xtest.reshape(Ntest, -1) / 255
 
 
