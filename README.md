@@ -99,6 +99,7 @@ https://github.com/vlievin/biva-pytorch
 https://github.com/casperkaae/parmesan  
 https://github.com/casperkaae/LVAE/blob/master/run_models.py  
 https://arxiv.org/pdf/1802.04537.pdf
+https://github.com/neha191091/IWAE/blob/master/iwae/experiments.py
 
 ## TODO:
 Extend to two stochastic layers  
@@ -113,3 +114,37 @@ Show
 2 layer:
 - posterior SNIS
 - PCA on the SNIS
+
+# Additional results:
+VAE with stochastic KL term
+| Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
+| --- | --- | --- |
+| VAE 1 | -87.50 | -86.76 |
+| VAE 5 | -87.80 | -86.47 |
+| VAE 50 | -88.42 | -86.35 |
+
+
+VAE with analytical KL term
+| Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
+| --- | --- | --- |
+| VAE 1 | -87.16 | -86.76 |
+| VAE 5 | -87.74 | -86.47 |
+| VAE 50 | -87.66 | -86.35 |
+
+IWAE equation (8)
+| Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
+| --- | --- | --- |
+| 1 | -87.49 | -86.76 |
+| 5 | -85.49 | -85.54 |
+| 50 | -84.73 | -84.78 |
+
+IWAE equation (14)
+| Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
+| --- | --- | --- |
+| 1 | -87.39 | -86.76 |
+| 5 | -85.55 | -85.54 |
+| 50 | -84.65 | -84.78 |
+
+
+It seems that there is a discrepancy for the IWAE for $k=1$, and for the VAE for all $k$. This is also seen in [this](https://github.com/xqding/Importance_Weighted_Autoencoders) repo from xqding.  
+[This](https://github.com/ShwanMario/IWAE) repo, from ShwanMario gets -86.28 for the VAE with $k=1$. On the other hand, when $k=64$ it drops to -87.15.
