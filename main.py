@@ -11,6 +11,7 @@ sys.path.insert(0, './src')
 import utils
 import iwae1
 
+# TODO: control warm-up from commandline
 parser = argparse.ArgumentParser()
 parser.add_argument("--n_latent", type=int, default=50, help="number of latent space dimensions")
 parser.add_argument("--n_samples", type=int, default=5, help="number of importance samples")
@@ -111,6 +112,7 @@ for epoch in range(epochs):
     # ---- plot samples from the prior at this epoch
     if epoch in plt_epochs:
         model.generate_and_save_images(z, epoch, "main_{0}_{1}_".format(n_samples, objective))
+        model.generate_and_save_posteriors(Xtest, ytest, 10, epoch, "main_{0}_{1}_".format(n_samples, objective))
 
     # ---- check if the learning rate needs to be updated
     if args.epochs == -1 and epoch in learning_rate_dict:
