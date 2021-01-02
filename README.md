@@ -1,6 +1,6 @@
 # IWAE
 
-Reproducing results from the [original IWAE paper](https://arxiv.org/pdf/1509.00519.pdf) in TensorFlow 2. 
+Reproducing results from the [IWAE paper](https://arxiv.org/pdf/1509.00519.pdf) in TensorFlow 2. 
 
 ## Usage
 The results for the model with 1 stochastic layer and 1, 5 or 50 importance samples can be obtained by running `main.py` with the default settings, adjusting the number of samples.
@@ -53,7 +53,7 @@ The Doubly Reparameterized Gradient Estimator for Monte Carlo Objectives, [DReG]
 ### Two stochastic layers
 See [Ladder VAE](https://arxiv.org/pdf/1602.02282.pdf) and accompanying [github](https://github.com/casperkaae/LVAE) and [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders/blob/master/model/vae_models.py).  
 
-[xqding](https://github.com/xqding/Importance_Weighted_Autoencoders) and []ShwanMario](https://github.com/ShwanMario/IWAE) train IWAEs with two stochastic layers, bot without reaching Yburdas results. But with better results than me. They use a different training setup then me, in order to check my implementation I will try to reproduce their results instead. Specifically I will start with xqding, batch-size 1000 and 5000 epochs.
+[xqding](https://github.com/xqding/Importance_Weighted_Autoencoders) and [ShwanMario](https://github.com/ShwanMario/IWAE) train IWAEs with two stochastic layers, both without reaching Yburdas results. But with better results than me. They use a different training setup than me, in order to check my implementation I will try to reproduce their results instead. Specifically I will start with xqding, batch-size 1000 and 5000 epochs.
 
 ## Comparisons
 A number of other repositories have reproduced these results, see for example  
@@ -65,18 +65,14 @@ A number of other repositories have reproduced these results, see for example
 
 ## Settings:  
 
-I get significantly different results when using the ELBO as formulated in eq 8 (with 1-monte-carlo sample) compared to the formulation in eq 14. 15dec2020 I am running a head-to-head comparison on cronus in task07 and task08. Here the correct $\epsilon$ is also used.
-
-It also looks like there is an issue with the IWAE loss compared to the analytical VAE loss in the 2 layer model. Check if this is also an issue in the 1 layer model. Specifically check  
-IWAE vs analytical VAE
-IWAE eq 8 vs eq 14
-
-In the paper, the initalizer from [Glorot & Bengeio (2010)](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf?source=post_page---------------------------) is used to initialize hidden layers. This is also the keras default initializer, which has also been used here.  
+In the paper the initalizer from [Glorot & Bengeio (2010)](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf?source=post_page---------------------------) is used to initialize hidden layers. This is also the keras default initializer, which has also been used here.  
 The paper uses Adam optimizer [Kingma & Ba](https://arxiv.org/abs/1412.6980), with $\beta_1 = 0.9$, $\beta_2=0.999$ and $\epsilon = 10^{-4}$. This is a bit different from the default Adam settings in keras, which has $\epsilon=10^{-7}$. This turned out not to make any difference.  
 
 ## Issues:
+1 stochastic layer VAE/IWAE: I get test-set LLH 1 nat worse than reported in the paper. If I use warmup I can get the same performance.  
+2 stochastic layer VAE/IWAE: I get worse performance than reported in the paper. What if I use warmup here as well? 
 
-Is using eq 8 and eq 14 for training equivalent? It seems so I trained task07 using eq 8 and task 11 using eq 14, to get the same marginal llh results. However, you cannot use eq 8 to evaluate the marginal LLH. They are only equivalent in terms of gradients. Well, when $k=1$, they are also equivalent in terms of marginal LLH estimate.  
+Is using eq 8 and eq 14 for training equivalent? It seems so, I trained task07 using eq 8 and task 11 using eq 14, to get the same marginal llh results. However, you cannot use eq 14 to evaluate the marginal LLH. They are only equivalent in terms of gradients. Well, when $k=1$, they are also equivalent in terms of marginal LLH estimate.  
 
 Note that pytorch dataloaders makes it easier to work with dynamically binarized mnist, see [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders/blob/master/model/vae_models.py)
 
@@ -99,7 +95,9 @@ https://github.com/vlievin/biva-pytorch
 https://github.com/casperkaae/parmesan  
 https://github.com/casperkaae/LVAE/blob/master/run_models.py  
 https://arxiv.org/pdf/1802.04537.pdf
-https://github.com/neha191091/IWAE/blob/master/iwae/experiments.py
+https://github.com/neha191091/IWAE/blob/master/iwae/experiments.py  
+https://github.com/jmtomczak/vae_vampprior  
+https://github.com/harvardnlp/sa-vae  
 
 ## TODO:
 Extend to two stochastic layers  
@@ -147,4 +145,29 @@ IWAE equation (14)
 
 
 It seems that there is a discrepancy for the IWAE for $k=1$, and for the VAE for all $k$. This is also seen in [this](https://github.com/xqding/Importance_Weighted_Autoencoders) repo from xqding.  
-[This](https://github.com/ShwanMario/IWAE) repo, from ShwanMario gets -86.28 for the VAE with $k=1$. On the other hand, when $k=64$ it drops to -87.15.
+[This](https://github.com/ShwanMario/IWAE) repo, from ShwanMario gets -86.28 for the VAE with $k=1$. On the other hand, when $k=64$ it drops to -87.15.  
+
+If we use warm-up, as suggested in [here](https://arxiv.org/pdf/1602.02282.pdf), we get the following results
+
+IWAE equation (8) with warm-up
+| Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
+| --- | --- | --- |
+| 1 | -86.32 | -86.76 |
+| 5 | -85.42 | -85.54 |
+| 50 | -84.69 | -84.78 |
+
+
+Standard VAE with warmup
+| Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
+| --- | --- | --- |
+| 1 | -86.32 | -86.76 |
+| 5 | -86.21 | -86.46 |
+| 50 | -86.05 | -86.35 |
+
+
+If we initialize the biases in the final layer to the mean of the training set in each dimension we get
+| Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
+| --- | --- | --- |
+| 1 | -86.31 | -86.76 |
+| 5 | -86.02 | -86.46 |
+| 50 | -85.94 | -86.35 |
