@@ -14,8 +14,6 @@ import iwae2
 
 # TODO: control warm-up from commandline
 parser = argparse.ArgumentParser()
-# parser.add_argument("--n_latent", type=int, default=50, help="number of latent space dimensions")
-# parser.add_argument("--n_hidden", type=int, default=200, help="number of hidden units in the NN layers")
 parser.add_argument("--stochastic_layers", type=int, default=1, choices=[1, 2], help="number of stochastic layers in the model")
 parser.add_argument("--n_samples", type=int, default=5, help="number of importance samples")
 parser.add_argument("--batch_size", type=int, default=20, help="batch size")
@@ -102,7 +100,7 @@ z = pz.sample([100, n_latent[-1]])
 
 plt_epochs = list(2**np.arange(12))
 plt_epochs.insert(0, 0)
-plt_epochs.append(epochs)
+plt_epochs.append(epochs-1)
 
 # ---- binarize the test data
 # we'll only do this once, while the training data is binarized at the

@@ -208,13 +208,12 @@ class IWAE(tf.keras.Model):
                 canvas[i * 28: (i + 1) * 28, j * 28: (j + 1) * 28] = x_samples[i * n + j].reshape(28, 28)
                 canvas[i * 28: (i + 1) * 28, n * 28 + j * 28: n * 28 + (j + 1) * 28] = x_probs[i * n + j].reshape(28,
                                                                                                                   28)
-
         plt.clf()
         plt.figure(figsize=(20, 10))
         plt.imshow(canvas, cmap='gray_r')
-        plt.title("epoch {:04d}".format(epoch))
+        plt.title("epoch {:04d}".format(epoch), fontsize=50)
         plt.axis('off')
-        plt.savefig(string + '_image_at_epoch_{:04d}.png'.format(epoch))
+        plt.savefig('./results/' + string + '_image_at_epoch_{:04d}.png'.format(epoch))
         plt.close()
 
     def generate_and_save_posteriors(self, x, y, n_samples, epoch, string):
@@ -234,7 +233,8 @@ class IWAE(tf.keras.Model):
         for c in np.unique(y):
             plt.scatter(z[y == c, 0], z[y == c, 1], s=10, label=str(c))
         plt.legend()
-        plt.savefig(string + '_posterior_at_epoch_{:04d}.png'.format(epoch))
+        plt.title("epoch {:04d}".format(epoch), fontsize=50)
+        plt.savefig('./results/' + string + '_posterior_at_epoch_{:04d}.png'.format(epoch))
         plt.close()
 
     @staticmethod
