@@ -1,10 +1,20 @@
+import numpy as np
 import tensorflow as tf
 from tensorflow_probability import distributions as tfd
+import utils
+import matplotlib
+matplotlib.use('Agg')  # needed when running from commandline
+import matplotlib.pyplot as plt
 
 
-def logmeanexp(log_w, axis):
-    max = tf.reduce_max(log_w, axis=axis)
-    return tf.math.log(tf.reduce_mean(tf.exp(log_w - max), axis=axis)) + max
+# ---- plot settings
+plt.rcParams["font.family"] = "serif"
+plt.rcParams['font.size'] = 15.0
+plt.rcParams['axes.spines.right'] = False
+plt.rcParams['axes.spines.top'] = False
+plt.rcParams['savefig.format'] = 'pdf'
+plt.rcParams['lines.linewidth'] = 2.5
+plt.rcParams['figure.autolayout'] = True
 
 
 class BasicBlock(tf.keras.Model):
@@ -20,7 +30,6 @@ class BasicBlock(tf.keras.Model):
         self.lstd = tf.keras.layers.Dense(n_latent, activation=tf.exp)
 
     def call(self, input):
-
         h1 = self.l1(input)
         h2 = self.l2(h1)
         q_mu = self.lmu(h2)
@@ -33,18 +42,15 @@ class BasicBlock(tf.keras.Model):
 
 class Encoder(tf.keras.Model):
     def __init__(self,
-                 n_hidden1,
-                 n_hidden2,
-                 n_latent1,
-                 n_latent2,
+                 n_hidden,
+                 n_latent,
                  **kwargs):
         super(Encoder, self).__init__(**kwargs)
 
-        self.encode_x_to_z1 = BasicBlock(n_hidden1, n_latent1)
-        self.encode_z1_to_z2 = BasicBlock(n_hidden2, n_latent2)
+        self.encode_x_to_z1 = BasicBlock(n_hidden[0], n_latent[0])
+        self.encode_z1_to_z2 = BasicBlock(n_hidden[1], n_latent[1])
 
     def call(self, x, n_samples):
-
         qz1x = self.encode_x_to_z1(x)
 
         z1 = qz1x.sample(n_samples)
@@ -58,30 +64,24 @@ class Encoder(tf.keras.Model):
 
 class Decoder(tf.keras.Model):
     def __init__(self,
-                 n_hidden1,
-                 n_hidden2,
-                 n_latent1,
+                 n_hidden,
+                 n_latent,
                  **kwargs):
         super(Decoder, self).__init__(**kwargs)
 
-        self.decode_z2_to_z1 = BasicBlock(n_hidden2, n_latent1)
+        self.decode_z2_to_z1 = BasicBlock(n_hidden[1], n_latent)
 
         # decode z1 to x
         self.decode_z1_to_x = tf.keras.Sequential(
             [
-                tf.keras.layers.Dense(n_hidden1, activation=tf.nn.tanh),
-                tf.keras.layers.Dense(n_hidden1, activation=tf.nn.tanh),
-                tf.keras.layers.Dense(784, activation=None)
+                tf.keras.layers.Dense(n_hidden[0], activation=tf.nn.tanh),
+                tf.keras.layers.Dense(n_hidden[0], activation=tf.nn.tanh),
+                tf.keras.layers.Dense(784, activation=None,
+                                      bias_initializer=utils.get_bias())
             ]
         )
 
-        # self.l1 = tf.keras.layers.Dense(n_hidden1, activation=tf.nn.tanh)
-        # self.l2 = tf.keras.layers.Dense(n_hidden1, activation=tf.nn.tanh)
-        #
-        # self.lout = tf.keras.layers.Dense(784, activation=None)
-
     def call(self, z1, z2):
-
         pz1z2 = self.decode_z2_to_z1(z2)
 
         logits = self.decode_z1_to_x(z1)
@@ -93,18 +93,15 @@ class Decoder(tf.keras.Model):
 
 class IWAE(tf.keras.Model):
     def __init__(self,
-                 n_hidden1,
-                 n_hidden2,
-                 n_latent1,
-                 n_latent2,
+                 n_hidden,
+                 n_latent,
                  **kwargs):
         super(IWAE, self).__init__(**kwargs)
 
-        self.encoder = Encoder(n_hidden1, n_hidden2, n_latent1, n_latent2)
-        self.decoder = Decoder(n_hidden1, n_hidden2, n_latent1)
+        self.encoder = Encoder(n_hidden, n_latent)
+        self.decoder = Decoder(n_hidden, n_latent[0])
 
     def call(self, x, n_samples, beta=1.0):
-
         # ---- encode/decode
         z1, qz1x, z2, qz2z1 = self.encoder(x, n_samples)
 
@@ -125,16 +122,37 @@ class IWAE(tf.keras.Model):
 
         log_w = lpxz1 + lpz1z2 + lpz2 - lqz1x - lqz2z1
 
+        # ---- regular VAE elbo
         # mean over samples and batch
-        vae_elbo = tf.reduce_mean(log_w)
+        vae_elbo = tf.reduce_mean(tf.reduce_mean(log_w, axis=0), axis=-1)
 
-        # logmeanexp over samples and mean over batch
-        iwae_elbo = tf.reduce_mean(logmeanexp(log_w, axis=0), axis=-1)
+        # ---- IWAE elbos
+        # eq (8): logmeanexp over samples and mean over batch
+        iwae_elbo = tf.reduce_mean(utils.logmeanexp(log_w, axis=0), axis=-1)
+
+        # eq (14):
+        m = tf.reduce_max(log_w, axis=0, keepdims=True)
+        log_w_minus_max = log_w - m
+        w = tf.exp(log_w_minus_max)
+        w_normalized = w / tf.reduce_sum(w, axis=0, keepdims=True)
+        w_normalized_stopped = tf.stop_gradient(w_normalized)
+
+        iwae_eq14 = tf.reduce_mean(tf.reduce_sum(w_normalized_stopped * log_w, axis=0))
+
+        # ---- self-normalized importance sampling
+        al = tf.nn.softmax(log_w, axis=0)
+
+        snis_z1 = tf.reduce_sum(al[:, :, None] * z1, axis=0)
+
+        snis_z2 = tf.reduce_sum(al[:, :, None] * z2, axis=0)
 
         return {"vae_elbo": vae_elbo,
                 "iwae_elbo": iwae_elbo,
+                "iwae_eq14": iwae_eq14,
                 "z1": z1,
                 "z2": z2,
+                "snis_z1": snis_z1,
+                "snis_z2": snis_z2,
                 "logits": logits,
                 "lpxz1": lpxz1,
                 "lpz1z2": lpz1z2,
@@ -143,11 +161,10 @@ class IWAE(tf.keras.Model):
                 "lqz2z1": lqz2z1}
 
     @tf.function
-    def train_step(self, x, n_samples, beta, optimizer, loss_key="vae_elbo"):
-
+    def train_step(self, x, n_samples, beta, optimizer, objective="vae_elbo"):
         with tf.GradientTape() as tape:
             res = self.call(x, n_samples, beta)
-            loss = -res[loss_key]
+            loss = -res[objective]
 
         grads = tape.gradient(loss, self.trainable_weights)
         optimizer.apply_gradients(zip(grads, self.trainable_weights))
@@ -159,7 +176,6 @@ class IWAE(tf.keras.Model):
         return self.call(x, n_samples, beta)
 
     def sample(self, z2):
-
         pz1z2 = self.decoder.decode_z2_to_z1(z2)
 
         z1 = pz1z2.sample()
@@ -174,4 +190,69 @@ class IWAE(tf.keras.Model):
 
         return x_sample, probs
 
+    def generate_and_save_images(self, z2, epoch, string):
 
+        # ---- samples from the prior
+        x_samples, x_probs = self.sample(z2)
+        x_samples = x_samples.numpy().squeeze()
+        x_probs = x_probs.numpy().squeeze()
+
+        n = int(np.sqrt(x_samples.shape[0]))
+
+        canvas = np.zeros((n * 28, 2 * n * 28))
+
+        for i in range(n):
+            for j in range(n):
+                canvas[i * 28: (i + 1) * 28, j * 28: (j + 1) * 28] = x_samples[i * n + j].reshape(28, 28)
+                canvas[i * 28: (i + 1) * 28, n * 28 + j * 28: n * 28 + (j + 1) * 28] = x_probs[i * n + j].reshape(28,
+                                                                                                                  28)
+
+        plt.clf()
+        plt.figure(figsize=(20, 10))
+        plt.imshow(canvas, cmap='gray_r')
+        plt.title("epoch {:04d}".format(epoch))
+        plt.axis('off')
+        plt.savefig(string + '_image_at_epoch_{:04d}.png'.format(epoch))
+        plt.close()
+
+    def generate_and_save_posteriors(self, x, y, n_samples, epoch, string):
+
+        # ---- posterior snis means
+        res = self.call(x, n_samples)
+
+        snis_z1 = res["snis_z1"]
+        snis_z2 = res["snis_z2"]
+
+        # pca
+        from sklearn.decomposition import PCA
+        pca = PCA(n_components=2)
+        pca.fit(snis_z1)
+        z = pca.transform(snis_z1)
+
+        plt.clf()
+        for c in np.unique(y):
+            plt.scatter(z[y == c, 0], z[y == c, 1], s=10, label=str(c))
+        plt.legend()
+        plt.savefig(string + '_posterior_z1_at_epoch_{:04d}.png'.format(epoch))
+        plt.close()
+
+        pca = PCA(n_components=2)
+        pca.fit(snis_z2)
+        z = pca.transform(snis_z2)
+
+        plt.clf()
+        for c in np.unique(y):
+            plt.scatter(z[y == c, 0], z[y == c, 1], s=10, label=str(c))
+        plt.legend()
+        plt.savefig(string + '_posterior_z2_at_epoch_{:04d}.png'.format(epoch))
+        plt.close()
+
+    @staticmethod
+    def write_to_tensorboard(res, step):
+        tf.summary.scalar('Evaluation/vae_elbo', res["vae_elbo"], step=step)
+        tf.summary.scalar('Evaluation/iwae_elbo', res["iwae_elbo"], step=step)
+        tf.summary.scalar('Evaluation/lpxz1', res['lpxz1'].numpy().mean(), step=step)
+        tf.summary.scalar('Evaluation/lpz1z2', res['lpz1z2'].numpy().mean(), step=step)
+        tf.summary.scalar('Evaluation/lqz1x', res['lqz1x'].numpy().mean(), step=step)
+        tf.summary.scalar('Evaluation/lqz2z1', res['lqz2z1'].numpy().mean(), step=step)
+        tf.summary.scalar('Evaluation/lpz2', res['lpz2'].numpy().mean(), step=step)

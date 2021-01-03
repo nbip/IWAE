@@ -7,7 +7,27 @@ matplotlib.use('Agg')  # needed when running from commandline
 import matplotlib.pyplot as plt
 
 
-# ---- dynamic binarize the data
+def logmeanexp(log_w, axis):
+    max = tf.reduce_max(log_w, axis=axis)
+    return tf.math.log(tf.reduce_mean(tf.exp(log_w - max), axis=axis)) + max
+
+
+def get_bias():
+    # ---- For initializing the bias in the final Bernoulli layer for p(x|z)
+    (Xtrain, ytrain), (_, _) = keras.datasets.mnist.load_data()
+    Ntrain = Xtrain.shape[0]
+
+    # ---- reshape to vectors
+    Xtrain = Xtrain.reshape(Ntrain, -1) / 255
+
+    train_mean = np.mean(Xtrain, axis=0)
+
+    bias = -np.log(1. / np.clip(train_mean, 0.001, 0.999) - 1.)
+
+    return tf.constant_initializer(bias)
+
+
+# ---- dynamically binarize the data
 def bernoullisample(x):
     return np.random.binomial(1, x, size=x.shape).astype('float32')
 
