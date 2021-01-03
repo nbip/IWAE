@@ -190,6 +190,22 @@ class IWAE(tf.keras.Model):
 
         return x_sample, probs
 
+    def conditional_sample(self, z2):
+        pz1z2 = self.decoder.decode_z2_to_z1(z2)
+
+        # now keep the z2 sample constant and draw several z1 samples
+        z1 = pz1z2.sample(10)
+
+        logits = self.decoder.decode_z1_to_x(z1)
+
+        probs = tf.nn.sigmoid(logits)
+
+        pxz1 = tfd.Bernoulli(logits=logits)
+
+        x_sample = pxz1.sample()
+
+        return x_sample, probs
+
     def generate_and_save_images(self, z2, epoch, string):
 
         # ---- samples from the prior
@@ -206,13 +222,47 @@ class IWAE(tf.keras.Model):
                 canvas[i * 28: (i + 1) * 28, j * 28: (j + 1) * 28] = x_samples[i * n + j].reshape(28, 28)
                 canvas[i * 28: (i + 1) * 28, n * 28 + j * 28: n * 28 + (j + 1) * 28] = x_probs[i * n + j].reshape(28,
                                                                                                                   28)
-
         plt.clf()
         plt.figure(figsize=(20, 10))
         plt.imshow(canvas, cmap='gray_r')
-        plt.title("epoch {:04d}".format(epoch))
+        plt.title("epoch {:04d}".format(epoch), fontsize=50)
         plt.axis('off')
-        plt.savefig(string + '_image_at_epoch_{:04d}.png'.format(epoch))
+        plt.savefig('./results/' + string + '_image_at_epoch_{:04d}.png'.format(epoch))
+        plt.close()
+
+        # ---- only samples
+        canvas = np.zeros((n * 28, n * 28))
+
+        for i in range(n):
+            for j in range(n):
+                canvas[i * 28: (i + 1) * 28, j * 28: (j + 1) * 28] = x_samples[i * n + j].reshape(28, 28)
+
+        plt.clf()
+        plt.figure(figsize=(10, 10))
+        plt.imshow(canvas, cmap='gray_r')
+        plt.title("epoch {:04d}".format(epoch), fontsize=50)
+        plt.axis('off')
+        plt.savefig('./results/' + string + '_samples_at_epoch_{:04d}.png'.format(epoch))
+        plt.close()
+
+        # ---- conditional sampling, keeping z2 fixed, sampling several z1
+        x_samples, x_probs = self.conditional_sample(z2)
+        x_samples = x_samples.numpy().squeeze()
+
+        n = 10
+
+        canvas = np.zeros((n * 28, n * 28))
+
+        for i in range(n):
+            for j in range(n):
+                canvas[i * 28: (i + 1) * 28, j * 28: (j + 1) * 28] = x_samples[j, i].reshape(28, 28)
+
+        plt.clf()
+        plt.figure(figsize=(10, 10))
+        plt.imshow(canvas, cmap='gray_r')
+        plt.title("epoch {:04d}".format(epoch), fontsize=50)
+        plt.axis('off')
+        plt.savefig('./results/' + string + '_conditional_at_epoch_{:04d}.png'.format(epoch))
         plt.close()
 
     def generate_and_save_posteriors(self, x, y, n_samples, epoch, string):
@@ -233,7 +283,8 @@ class IWAE(tf.keras.Model):
         for c in np.unique(y):
             plt.scatter(z[y == c, 0], z[y == c, 1], s=10, label=str(c))
         plt.legend()
-        plt.savefig(string + '_posterior_z1_at_epoch_{:04d}.png'.format(epoch))
+        plt.title("epoch {:04d}".format(epoch), fontsize=50)
+        plt.savefig('./results/' + string + '_posterior_z1_at_epoch_{:04d}.png'.format(epoch))
         plt.close()
 
         pca = PCA(n_components=2)
@@ -244,7 +295,8 @@ class IWAE(tf.keras.Model):
         for c in np.unique(y):
             plt.scatter(z[y == c, 0], z[y == c, 1], s=10, label=str(c))
         plt.legend()
-        plt.savefig(string + '_posterior_z2_at_epoch_{:04d}.png'.format(epoch))
+        plt.title("epoch {:04d}".format(epoch), fontsize=50)
+        plt.savefig('./results/' + string + '_posterior_z2_at_epoch_{:04d}.png'.format(epoch))
         plt.close()
 
     @staticmethod

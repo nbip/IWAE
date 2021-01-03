@@ -41,17 +41,8 @@ The Doubly Reparameterized Gradient Estimator for Monte Carlo Objectives, [DReG]
 ## Tasks
 `main.py`: original experiment with 1 or 2 stochastic layers.  
 `task01.py`: Use a 2D latent space to investigate both true and variational posteriors. We can use *self-normalized importance sampling* to estimate posterior means and *sampling importance resampling* to draw samples from the true posterior.  
-`task02.py`: Use the Double Reparameterized Gradient Estimator, [DReG](https://arxiv.org/pdf/1810.04152.pdf), to the original experiment.
+`task02.py`: Use the Double Reparameterized Gradient Estimator, [DReG](https://arxiv.org/pdf/1810.04152.pdf), to the original experiment.  
 `task03.py`: 2 stochastic layers with 2d and 1d latent spaces
-
-### Two stochastic layers
-See 
-- [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders/blob/master/model/vae_models.py)  
-- [ShwanMario](https://github.com/ShwanMario/IWAE)
-- [addtt](https://github.com/addtt/ladder-vae-pytorch)
-- [Ladder VAE](https://arxiv.org/pdf/1602.02282.pdf) and accompanying [github](https://github.com/casperkaae/LVAE)
-
-[xqding](https://github.com/xqding/Importance_Weighted_Autoencoders) and [ShwanMario](https://github.com/ShwanMario/IWAE) train IWAEs with two stochastic layers, both without reaching Yburdas results, using a different training setup than me.  
 
 ## Comparisons
 A number of other repositories have reproduced results from the IWAE paper, see for example  
@@ -84,13 +75,13 @@ Show
 - SNIS
 - SIR
 Two layer model with 2 and 1 units, to investigate the marginal distribution in the first stochastic layer.  
-Conditional sampling in two-layer models, a la [addtt](https://github.com/addtt/ladder-vae-pytorch).  
 
 ## Done:
 Extend to two stochastic layers  
 2 layer:
 - posterior SNIS
 - PCA on the SNIS
+Conditional sampling in two-layer models, a la [addtt](https://github.com/addtt/ladder-vae-pytorch).  
 
 
 # Additional results:
@@ -150,4 +141,14 @@ https://arxiv.org/pdf/1802.04537.pdf
 https://github.com/neha191091/IWAE/blob/master/iwae/experiments.py  
 https://github.com/jmtomczak/vae_vampprior  
 https://github.com/harvardnlp/sa-vae  
+
+### Two stochastic layers
+See 
+- [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders/blob/master/model/vae_models.py)  
+- [ShwanMario](https://github.com/ShwanMario/IWAE)
+- [addtt](https://github.com/addtt/ladder-vae-pytorch)
+- [Ladder VAE](https://arxiv.org/pdf/1602.02282.pdf) and accompanying [github](https://github.com/casperkaae/LVAE)
+
+[xqding](https://github.com/xqding/Importance_Weighted_Autoencoders) and [ShwanMario](https://github.com/ShwanMario/IWAE) train IWAEs with two stochastic layers, both without reaching Yburdas results, using a different training setup than me.  
+
 
