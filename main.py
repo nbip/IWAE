@@ -10,20 +10,25 @@ import sys
 sys.path.insert(0, './src')
 import utils
 import iwae1
+import iwae2
 
 # TODO: control warm-up from commandline
 parser = argparse.ArgumentParser()
-parser.add_argument("--n_latent", type=int, default=50, help="number of latent space dimensions")
+# parser.add_argument("--n_latent", type=int, default=50, help="number of latent space dimensions")
+# parser.add_argument("--n_hidden", type=int, default=200, help="number of hidden units in the NN layers")
+parser.add_argument("--stochastic_layers", type=int, default=1, choices=[1, 2], help="number of stochastic layers in the model")
 parser.add_argument("--n_samples", type=int, default=5, help="number of importance samples")
-parser.add_argument("--n_hidden", type=int, default=200, help="number of hidden units in the NN layers")
 parser.add_argument("--batch_size", type=int, default=20, help="batch size")
 parser.add_argument("--epochs", type=int, default=-1,
                     help="numper of epochs, if set to -1 number of epochs "
                          "will be set based on the learning rate scheme from the paper")
-parser.add_argument("--objective", type=str, default="vae_elbo", choices=["vae_elbo", "iwae_elbo", "iwae_eq14", "vae_elbo_kl"])
+parser.add_argument("--objective", type=str, default="iwae_elbo", choices=["vae_elbo", "iwae_elbo", "iwae_eq14", "vae_elbo_kl"])
 parser.add_argument("--gpu", type=str, default='0', help="Choose GPU")
 args = parser.parse_args()
 print(args)
+
+# ---- string describing the experiment, to use in tensorboard and plots
+string = "main_{0}_{1}_{2}".format(args.objective, args.stochastic_layers, args.n_samples)
 
 # ---- set the visible GPU devices
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
@@ -63,38 +68,45 @@ Xtest = Xtest.reshape(Ntest, -1) / 255
 
 # ---- experiment settings
 objective = args.objective
-n_latent = args.n_latent
+# n_latent = args.n_latent
+# n_hidden = args.n_hidden
 n_samples = args.n_samples
-n_hidden = args.n_hidden
 batch_size = args.batch_size
 steps_pr_epoch = Ntrain // batch_size
 total_steps = steps_pr_epoch * epochs
 
 # ---- prepare tensorboard
 current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-train_log_dir = "/tmp/iwae/main_{}/".format(objective) + current_time + "/train"
+train_log_dir = "/tmp/iwae/{0}/".format(string) + current_time + "/train"
 train_summary_writer = tf.summary.create_file_writer(train_log_dir)
-test_log_dir = "/tmp/iwae/main_{}/".format(objective) + current_time + "/test"
+test_log_dir = "/tmp/iwae/{0}/".format(string) + current_time + "/test"
 test_summary_writer = tf.summary.create_file_writer(test_log_dir)
+
+# ---- instantiate the model, optimizer and metrics
+if args.stochastic_layers == 1:
+    n_latent = [100]
+    n_hidden = [200]
+    model = iwae1.IWAE(n_hidden[0], n_latent[0])
+else:
+    n_latent = [100, 50]
+    n_hidden = [200, 100]
+    model = iwae2.IWAE(n_hidden, n_latent)
+
+optimizer = keras.optimizers.Adam(learning_rate_dict[0], epsilon=1e-4)
+print("Initial learning rate: ", optimizer.learning_rate.numpy())
 
 # ---- prepare plotting of samples during training
 # use the same samples from the prior throughout training
 pz = tfd.Normal(0, 1)
-z = pz.sample([100, n_latent])
+z = pz.sample([100, n_latent[-1]])
 
 plt_epochs = list(2**np.arange(12))
 plt_epochs.insert(0, 0)
 plt_epochs.append(epochs)
 
-# ---- instantiate the model, optimizer and metrics
-model = iwae1.IWAE(n_hidden, n_latent)
-
-optimizer = keras.optimizers.Adam(learning_rate_dict[0], epsilon=1e-4)
-print("Initial learning rate: ", optimizer.learning_rate.numpy())
-
 # ---- binarize the test data
 # we'll only do this once, while the training data is binarized at the
-#  start of each epoch
+# start of each epoch
 Xtest = utils.bernoullisample(Xtest)
 
 # ---- do the training
@@ -111,8 +123,8 @@ for epoch in range(epochs):
 
     # ---- plot samples from the prior at this epoch
     if epoch in plt_epochs:
-        model.generate_and_save_images(z, epoch, "main_{0}_{1}_".format(n_samples, objective))
-        model.generate_and_save_posteriors(Xtest, ytest, 10, epoch, "main_{0}_{1}_".format(n_samples, objective))
+        model.generate_and_save_images(z, epoch, string)
+        model.generate_and_save_posteriors(Xtest, ytest, 10, epoch, string)
 
     # ---- check if the learning rate needs to be updated
     if args.epochs == -1 and epoch in learning_rate_dict:
@@ -136,22 +148,14 @@ for epoch in range(epochs):
 
             # ---- write training stats to tensorboard
             with train_summary_writer.as_default():
-                tf.summary.scalar('Evaluation/vae_elbo', res["vae_elbo"], step=step)
-                tf.summary.scalar('Evaluation/iwae_elbo', res["iwae_elbo"], step=step)
-                tf.summary.scalar('Evaluation/lpxz', res['lpxz'].numpy().mean(), step=step)
-                tf.summary.scalar('Evaluation/lqzx', res['lqzx'].numpy().mean(), step=step)
-                tf.summary.scalar('Evaluation/lpz', res['lpz'].numpy().mean(), step=step)
+                model.write_to_tensorboard(res, step)
 
             # ---- monitor the test-set
             test_res = model.val_step(Xtest, n_samples, beta)
 
             # ---- write test stats to tensorboard
             with test_summary_writer.as_default():
-                tf.summary.scalar('Evaluation/vae_elbo', test_res["vae_elbo"], step=step)
-                tf.summary.scalar('Evaluation/iwae_elbo', test_res["iwae_elbo"], step=step)
-                tf.summary.scalar('Evaluation/lpxz', test_res['lpxz'].numpy().mean(), step=step)
-                tf.summary.scalar('Evaluation/lqzx', test_res['lqzx'].numpy().mean(), step=step)
-                tf.summary.scalar('Evaluation/lpz', test_res['lpz'].numpy().mean(), step=step)
+                model.write_to_tensorboard(test_res, step)
 
             took = time.time() - start
             start = time.time()
@@ -160,10 +164,10 @@ for epoch in range(epochs):
                   .format(epoch, epochs, step, total_steps, res[objective].numpy(), test_res[objective], took))
 
 # ---- save final weights
-model.save_weights('/tmp/iwae/main/final_weights' + '_nsamples_{0}_{1}'.format(n_samples, objective))
+model.save_weights('/tmp/iwae/{0}/final_weights'.format(string))
 
 # ---- load the final weights?
-# model.load_weights('/tmp/iwae/main/final_weights' + '_nsamples_{}'.format(n_samples))
+# model.load_weights('/tmp/iwae/{0}/final_weights'.format(string))
 
 # ---- test-set llh estimate using 5000 samples
 test_elbo_metric = utils.MyMetric()

@@ -214,7 +214,7 @@ class IWAE(tf.keras.Model):
         plt.imshow(canvas, cmap='gray_r')
         plt.title("epoch {:04d}".format(epoch))
         plt.axis('off')
-        plt.savefig(string + 'image_at_epoch_{:04d}.png'.format(epoch))
+        plt.savefig(string + '_image_at_epoch_{:04d}.png'.format(epoch))
         plt.close()
 
     def generate_and_save_posteriors(self, x, y, n_samples, epoch, string):
@@ -234,8 +234,16 @@ class IWAE(tf.keras.Model):
         for c in np.unique(y):
             plt.scatter(z[y == c, 0], z[y == c, 1], s=10, label=str(c))
         plt.legend()
-        plt.savefig(string + 'posterior_at_epoch_{:04d}.png'.format(epoch))
+        plt.savefig(string + '_posterior_at_epoch_{:04d}.png'.format(epoch))
         plt.close()
+
+    @staticmethod
+    def write_to_tensorboard(res, step):
+        tf.summary.scalar('Evaluation/vae_elbo', res["vae_elbo"], step=step)
+        tf.summary.scalar('Evaluation/iwae_elbo', res["iwae_elbo"], step=step)
+        tf.summary.scalar('Evaluation/lpxz', res['lpxz'].numpy().mean(), step=step)
+        tf.summary.scalar('Evaluation/lqzx', res['lqzx'].numpy().mean(), step=step)
+        tf.summary.scalar('Evaluation/lpz', res['lpz'].numpy().mean(), step=step)
 
 
 
