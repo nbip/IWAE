@@ -11,7 +11,7 @@ python main.py --n_samples  <# of importance samples, 5 by default>
 The model is investigated further in a series of tasks found in `./tasks`
 
 ## Results
-<img src="results/iwae_50.gif" width="300" height="300" />
+<img src="results/iwae_50.gif" width="600" height="300" />
 
 Test-set log likelihoods are estimated using 5000 importance samples
 
