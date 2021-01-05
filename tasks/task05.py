@@ -208,6 +208,10 @@ def train_step(model, x, n_samples, optimizer):
     del tape
     optimizer.apply_gradients(zip(encoder_grads + decoder_grads,
                                   model.encoder.trainable_weights + model.decoder.trainable_weights))
+    # optimizer.apply_gradients(encoder_grads,
+    #                           model.encoder.trainable_weights)
+    # optimizer.apply_gradients(decoder_grads,
+    #                           model.decoder.trainable_weights)
 
     return res
 

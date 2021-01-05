@@ -1,22 +1,19 @@
 import tensorflow as tf
+from tensorflow_probability import distributions as tfd
 from tensorflow import keras
 import numpy as np
 import os
 import argparse
 import datetime
 import time
-import matplotlib
-matplotlib.use('Agg')  # needed when running from commandline
-import matplotlib.pyplot as plt
 import sys
-sys.path.insert(0, '../src')
+sys.path.insert(0, './src')
 import utils
-import model
+import iwae1
+
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--n_latent", type=int, default=50, help="number of latent space dimensions")
 parser.add_argument("--n_samples", type=int, default=5, help="number of importance samples")
-parser.add_argument("--n_hidden", type=int, default=200, help="number of hidden units in the NN layers")
 parser.add_argument("--batch_size", type=int, default=20, help="batch size")
 parser.add_argument("--epochs", type=int, default=-1,
                     help="numper of epochs, if set to -1 number of epochs "
@@ -24,6 +21,95 @@ parser.add_argument("--epochs", type=int, default=-1,
 parser.add_argument("--gpu", type=str, default='0', help="Choose GPU")
 args = parser.parse_args()
 print(args)
+
+
+# --- override the call method in iwae1
+class IWAEDReG(iwae1.IWAE):
+    def __init__(self,
+                 n_hidden,
+                 n_latent,
+                 **kwargs):
+        super(IWAEDReG, self).__init__(n_hidden, n_latent, **kwargs)
+
+    def call(self, x, n_samples, beta=1.0):
+        # ---- encode/decode
+        z, qzx  = self.encoder(x, n_samples)
+
+        logits, pxz = self.decoder(z)
+
+        # ---- loss
+        pz = tfd.Normal(0, 1)
+
+        lpz = tf.reduce_sum(pz.log_prob(z), axis=-1)
+
+        lqzx = tf.reduce_sum(qzx.log_prob(z), axis=-1)
+
+        lpxz = tf.reduce_sum(pxz.log_prob(x), axis=-1)
+
+        log_w = lpxz + beta * (lpz - lqzx)
+
+        # ---- IWAE elbo
+        # eq (8): logmeanexp over samples and mean over batch
+        iwae_elbo = tf.reduce_mean(utils.logmeanexp(log_w, axis=0), axis=-1)
+
+        # ---- self-normalized importance sampling
+        al = tf.nn.softmax(log_w, axis=0)
+
+        snis_z = tf.reduce_sum(al[:, :, None] * z, axis=0)
+
+        # ---- prepare DReG
+        q_mu_stopped, q_std_stopped = tf.stop_gradient(qzx.loc), tf.stop_gradient(qzx.scale)
+
+        qzx_stopped = tfd.Normal(q_mu_stopped, q_std_stopped + 1e-6)
+
+        lqzx_stopped = tf.reduce_sum(qzx_stopped.log_prob(z), axis=-1)
+
+        stopped_normalized_weights = tf.stop_gradient(al)
+        sq_normalized_weights = tf.square(stopped_normalized_weights)
+
+        stopped_log_w = lpz + lpxz - lqzx_stopped
+
+        # ---- doubly reparameterized
+        DReG = tf.reduce_sum(sq_normalized_weights * stopped_log_w, axis=0)
+
+        # ---- average over minibatch to get the average DReG
+        inference_loss = -tf.reduce_mean(DReG, axis=-1)
+
+        return {"iwae_elbo": iwae_elbo,
+                "inference_loss": inference_loss,
+                "z": z,
+                "snis_z": snis_z,
+                "logits": logits,
+                "lpxz": lpxz,
+                "lpz": lpz,
+                "lqzx": lqzx}
+
+    @tf.function
+    def train_step(self, x, n_samples, beta, optimizer):
+
+        with tf.GradientTape(persistent=True) as tape:
+            res = self.call(x, n_samples, beta)
+            loss = -res["iwae_elbo"]
+            inference_loss = res["inference_loss"]
+
+        encoder_grads = tape.gradient(inference_loss, self.encoder.trainable_weights)
+        decoder_grads = tape.gradient(loss, self.decoder.trainable_weights)
+        del tape
+        optimizer.apply_gradients(zip(encoder_grads + decoder_grads,
+                                      self.encoder.trainable_weights + self.decoder.trainable_weights))
+
+        return res
+
+    @staticmethod
+    def write_to_tensorboard(res, step):
+        tf.summary.scalar('Evaluation/iwae_elbo', res["iwae_elbo"], step=step)
+        tf.summary.scalar('Evaluation/lpxz', res['lpxz'].numpy().mean(), step=step)
+        tf.summary.scalar('Evaluation/lqzx', res['lqzx'].numpy().mean(), step=step)
+        tf.summary.scalar('Evaluation/lpz', res['lpz'].numpy().mean(), step=step)
+
+
+# ---- string describing the experiment, to use in tensorboard and plots
+string = "task02_{0}".format(args.n_samples)
 
 # ---- set the visible GPU devices
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
@@ -33,15 +119,6 @@ gpus = tf.config.list_physical_devices('GPU')
 if gpus:
     tf.config.experimental.set_memory_growth(gpus[0], True)
 
-# ---- plot settings
-plt.rcParams["font.family"] = "serif"
-plt.rcParams['font.size'] = 15.0
-plt.rcParams['axes.spines.right'] = False
-plt.rcParams['axes.spines.top'] = False
-plt.rcParams['savefig.format'] = 'pdf'
-plt.rcParams['lines.linewidth'] = 2.5
-plt.rcParams['figure.autolayout'] = True
-
 # ---- set random seeds
 np.random.seed(123)
 tf.random.set_seed(123)
@@ -49,105 +126,65 @@ tf.random.set_seed(123)
 # ---- number of passes over the data, see bottom of page 6 in [1]
 if args.epochs == -1:
     epochs = 0
-    learning_rate_change_epoch = []
-    learning_rates = []
+    learning_rate_dict = {}
 
     for i in range(8):
-        learning_rates.append(0.001 * 10**(-i/7))
+        learning_rate = 0.001 * 10**(-i/7)
+        learning_rate_dict[epochs] = learning_rate
         epochs += 3 ** i
-        learning_rate_change_epoch.append(epochs)
 
 else:
     epochs = args.epochs
-    learning_rates = []
-    learning_rates.append(0.0001)
-
-# ---- experiment settings
-n_latent = args.n_latent
-n_samples = args.n_samples
-n_hidden = args.n_hidden
-batch_size = args.batch_size
+    learning_rate_dict = {}
+    learning_rate_dict[0] = 0.0001
 
 # ---- load data
 (Xtrain, ytrain), (Xtest, ytest) = keras.datasets.mnist.load_data()
-
-# ---- create validation set
-Xval = Xtrain[-10000:]
-Xtrain = Xtrain[:-10000]
-
 Ntrain = Xtrain.shape[0]
-Nval = Xval.shape[0]
 Ntest = Xtest.shape[0]
 
 # ---- reshape to vectors
 Xtrain = Xtrain.reshape(Ntrain, -1) / 255
-Xval = Xval.reshape(Nval, -1) / 255
 Xtest = Xtest.reshape(Ntest, -1) / 255
 
-
-# ---- train and validation steps
-@tf.function
-def train_step(model, x, n_samples, optimizer):
-
-    with tf.GradientTape() as tape:
-        res = model(x, n_samples)
-        loss = res["loss"]
-
-    grads = tape.gradient(loss, model.trainable_weights)
-    optimizer.apply_gradients(zip(grads, model.trainable_weights))
-
-    return res
-
-
-@tf.function
-def val_step(model, x, n_samples):
-    return model(x, n_samples)
-
-
-# ---- prepare tensorboard
-current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-train_log_dir = "/tmp/iwae/task02/" + current_time + "/train"
-val_log_dir = "/tmp/iwae/task02/" + current_time + "/val"
-train_summary_writer = tf.summary.create_file_writer(train_log_dir)
-val_summary_writer = tf.summary.create_file_writer(val_log_dir)
-
-# ---- prepare the data
-Ntrain = Xtrain.shape[0]
-Nval = Xval.shape[0]
-Ntest = Xtest.shape[0]
-
+# ---- experiment settings
+n_samples = args.n_samples
+batch_size = args.batch_size
 steps_pr_epoch = Ntrain // batch_size
 total_steps = steps_pr_epoch * epochs
 
-# ---- binarize the validation data
-# ---- we'll only do this once, while the training data is binarized at the
-# ---- start of each epoch
-Xval = utils.bernoullisample(Xval)
-
-val_dataset = (tf.data.Dataset.from_tensor_slices(Xval)
-               .shuffle(Nval).batch(1000))
-
+# ---- prepare tensorboard
+current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+train_log_dir = "/tmp/iwae/{0}/".format(string) + current_time + "/train"
+train_summary_writer = tf.summary.create_file_writer(train_log_dir)
+test_log_dir = "/tmp/iwae/{0}/".format(string) + current_time + "/test"
+test_summary_writer = tf.summary.create_file_writer(test_log_dir)
 
 # ---- instantiate the model, optimizer and metrics
-model = model.VAE(n_hidden, n_latent)
+n_latent = [100]
+n_hidden = [200]
+model = IWAEDReG(n_hidden[0], n_latent[0])
 
-optimizer = keras.optimizers.Adam(learning_rates[0])
+optimizer = keras.optimizers.Adam(learning_rate_dict[0], epsilon=1e-4)
 print("Initial learning rate: ", optimizer.learning_rate.numpy())
 
-# ---- Use the MyMetric class to collect losses over several batches
-# ---- If the whole validation set can fit in GPU memory then this is not needed
-val_elbo_metric = utils.MyMetric()
-val_lpxz_metric = utils.MyMetric()
-val_lpz_metric = utils.MyMetric()
-val_lqzx_metric = utils.MyMetric()
-val_kl_metric = utils.MyMetric()
+# ---- prepare plotting of samples during training
+# use the same samples from the prior throughout training
+pz = tfd.Normal(0, 1)
+z = pz.sample([100, n_latent[-1]])
+
+plt_epochs = list(2**np.arange(12))
+plt_epochs.insert(0, 0)
+plt_epochs.append(epochs-1)
+
+# ---- binarize the test data
+# we'll only do this once, while the training data is binarized at the
+# start of each epoch
+Xtest = utils.bernoullisample(Xtest)
 
 # ---- do the training
 start = time.time()
 best = float(-np.inf)
-
-train_history = []
-val_history = []
 
 for epoch in range(epochs):
 
@@ -157,11 +194,14 @@ for epoch in range(epochs):
     train_dataset = (tf.data.Dataset.from_tensor_slices(Xtrain_binarized)
         .shuffle(Ntrain).batch(batch_size))
 
-    # ---- check if the learning rate needs to be updated
-    if args.epochs == -1 and np.sum(epoch == np.asarray(learning_rate_change_epoch)) > 0:
-        idx = np.where(epoch == np.asarray(learning_rate_change_epoch))[0][0]
+    # ---- plot samples from the prior at this epoch
+    if epoch in plt_epochs:
+        model.generate_and_save_images(z, epoch, string)
+        model.generate_and_save_posteriors(Xtest, ytest, 10, epoch, string)
 
-        new_learning_rate = learning_rates[idx + 1]
+    # ---- check if the learning rate needs to be updated
+    if args.epochs == -1 and epoch in learning_rate_dict:
+        new_learning_rate = learning_rate_dict[epoch]
         old_learning_rate = optimizer.learning_rate.numpy()
 
         print("Changing learning rate from {0} to {1}".format(old_learning_rate, new_learning_rate))
@@ -170,68 +210,37 @@ for epoch in range(epochs):
     for _step, x_batch in enumerate(train_dataset):
         step = _step + steps_pr_epoch * epoch
 
+        # ---- warm-up
+        beta = 1.0
+        # beta = np.min([step / 200000, 1.0]).astype(np.float32)
+
         # ---- one training step
-        res = train_step(model, x_batch, n_samples, optimizer)
+        res = model.train_step(x_batch, n_samples, beta, optimizer)
 
         if step % 200 == 0:
-            train_history.append(res["elbo"].numpy().mean())
 
             # ---- write training stats to tensorboard
             with train_summary_writer.as_default():
-                tf.summary.scalar('Evaluation/elbo', res["elbo"], step=step)
-                tf.summary.scalar('Evaluation/lpxz', res['lpxz'].numpy().mean(), step=step)
-                tf.summary.scalar('Evaluation/lqzx', res['lqzx'].numpy().mean(), step=step)
-                tf.summary.scalar('Evaluation/lpz', res['lpz'].numpy().mean(), step=step)
-                tf.summary.scalar('Evaluation/kl', res['kl'].numpy().mean(), step=step)
+                model.write_to_tensorboard(res, step)
 
-            # ---- collect validation stats
-            for x_val_batch in val_dataset:
+            # ---- monitor the test-set
+            test_res = model.val_step(Xtest, n_samples, beta)
 
-                val_res = val_step(model, x_val_batch, n_samples)
-
-                val_elbo_metric.update_state(val_res["log_avg_w"])
-                val_lpxz_metric.update_state(tf.reduce_mean(val_res['lpxz'], axis=0))
-                val_lpz_metric.update_state(tf.reduce_mean(val_res['lpz'], axis=0))
-                val_lqzx_metric.update_state(tf.reduce_mean(val_res['lqzx'], axis=0))
-                val_kl_metric.update_state(val_res["kl"])
-
-            # ---- summarize the results over the batches and reset the metrics
-            val_elbo = val_elbo_metric.result()
-            val_elbo_metric.reset_states()
-            val_lpxz = val_lpxz_metric.result()
-            val_lpxz_metric.reset_states()
-            val_lpz = val_lpz_metric.result()
-            val_lpz_metric.reset_states()
-            val_lqzx = val_lqzx_metric.result()
-            val_lqzx_metric.reset_states()
-            val_kl = val_kl_metric.result()
-            val_kl_metric.reset_states()
-
-            val_history.append(val_elbo)
-
-            # ---- write val stats to tensorboard
-            with val_summary_writer.as_default():
-                tf.summary.scalar('Evaluation/elbo', val_elbo, step=step)
-                tf.summary.scalar('Evaluation/lpxz', val_lpxz, step=step)
-                tf.summary.scalar('Evaluation/lqzx', val_lqzx, step=step)
-                tf.summary.scalar('Evaluation/lpz', val_lpz, step=step)
-                tf.summary.scalar('Evaluation/kl', val_kl, step=step)
-
-            # ---- save the model if the validation loss improves
-            if val_elbo > best:
-                print("saving model...")
-                model.save_weights('/tmp/iwae/task02/best_weights' + '_nsamples_{}'.format(n_samples))
-                best = val_elbo
+            # ---- write test stats to tensorboard
+            with test_summary_writer.as_default():
+                model.write_to_tensorboard(test_res, step)
 
             took = time.time() - start
             start = time.time()
 
             print("epoch {0}/{1}, step {2}/{3}, train ELBO: {4:.2f}, val ELBO: {5:.2f}, time: {6:.2f}"
-                  .format(epoch, epochs, step, total_steps, res["elbo"].numpy(), val_elbo.numpy(), took))
+                  .format(epoch, epochs, step, total_steps, res["iwae_elbo"].numpy(), test_res["iwae_elbo"], took))
 
+# ---- save final weights
+model.save_weights('/tmp/iwae/{0}/final_weights'.format(string))
 
-# ---- if you want to do early stopping based on the best validation set error:
-model.load_weights('/tmp/iwae/task02/best_weights' + '_nsamples_{}'.format(n_samples))
+# ---- load the final weights?
+# model.load_weights('/tmp/iwae/{0}/final_weights'.format(string))
 
 # ---- test-set llh estimate using 5000 samples
 test_elbo_metric = utils.MyMetric()
@@ -239,8 +248,8 @@ L = 5000
 
 # ---- since we are using 5000 importance samples we have to loop over each element of the test-set
 for i, x in enumerate(Xtest):
-    res = model(x[None, :].astype(np.float32), L)
-    test_elbo_metric.update_state(res['elbo'][None, None])
+    res = model.call(x[None, :].astype(np.float32), L)
+    test_elbo_metric.update_state(res['iwae_elbo'][None, None])
     if i % 200 == 0:
         print("{0}/{1}".format(i, Ntest))
 
@@ -248,10 +257,3 @@ test_set_llh = test_elbo_metric.result()
 test_elbo_metric.reset_states()
 
 print("Test-set {0} sample log likelihood estimate: {1:.4f}".format(L, test_set_llh))
-
-# ---- plot samples from the prior
-utils.plot_prior(model, n=10,
-                 epoch=step // steps_pr_epoch,
-                 n_latent=n_latent,
-                 prefix='task02_',
-                 suffix='_nsamples_{}'.format(n_samples))
