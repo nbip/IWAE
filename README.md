@@ -19,24 +19,24 @@ Test-set log likelihoods are estimated using 5000 importance samples
 | Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
 | --- | --- | --- |
 | 1 | -86.35 | -86.76 |
-| 5 | -85.28 | -85.54 |
-| 50 | -84.63 | -84.78 |
+| 5 | -85.18 | -85.54 |
+| 50 | -84.59 | -84.78 |
 
 #### 2 stochastic layers
 | Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
 | --- | --- | --- |
-| 1 | -84.93 | -85.33 |
-| 5 | -83.43 | -83.89 |
-| 50 | -82.87 | -82.90 |
+| 1 | -84.83 | -85.33 |
+| 5 | -83.48 | -83.89 |
+| 50 | -82.82 | -82.90 |
 
 #### DReG dynamic binarization
-The Doubly Reparameterized Gradient Estimator for Monte Carlo Objectives, [DReG](https://arxiv.org/pdf/1810.04152.pdf) provides even lower variance gradients for the inference network, than just using the reparameterization trick. 
+The Doubly Reparameterized Gradient Estimator for Monte Carlo Objectives, [DReG](https://arxiv.org/pdf/1810.04152.pdf), provides even lower variance gradients for the inference network, than just using the reparameterization trick. This is implemented in `task02.py`.  
 
-| Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
+| Method | DReG Test-set LLH | Standard IWAE Test-set LLH |
 | --- | --- | --- |
-| 1 |  |  |
-| 5 |  |  |
-| 50 |  |  |
+| 1 | -86.08 | -86.35 |
+| 5 | -84.90 | -85.18 |
+| 50 | -84.32 | -84.59 |
 
 ## Tasks
 `main.py`: original experiment with 1 or 2 stochastic layers.  
@@ -90,14 +90,18 @@ Conditional sampling in two-layer models, a la [addtt](https://github.com/addtt/
 | --- | --- | --- |
 | VAE 1 | -86.35 | -86.76 |
 | VAE 5 | -86.10 | -86.47 |
-| VAE 50 | -86.05 | -86.35 |
+| VAE 50 | -86.06 | -86.35 |
 
 #### 2 stochastic layers VAE
 | Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
 | --- | --- | --- |
-| VAE 1 | -84.93 | -85.33 |
-| VAE 5 | -84.04 | -85.01 |
-| VAE 50 | -83.76 | -84.78 |
+| VAE 1 | -84.83 | -85.33 |
+| VAE 5 | -84.08 | -85.01 |
+| VAE 50 | -83.89 | -84.78 |
+
+#### Test-set lower bounds during training: IWAE with DReG vs regular IWAE
+Test-set lower bounds for 1, 5 and 50 importance samples, with DReG and without. 
+<img src="results/dreg_vs_iwae.png" width="356" height="274" />
 
 ## Using warm-up, as suggested in [LVAE](https://arxiv.org/pdf/1602.02282.pdf)
 #### IWAE equation (8) with warm-up
@@ -120,27 +124,28 @@ I could not get the 1-sample VAE/IWAE results to match paper results, they were 
 The model with two stochastic layers, did not yield similar results to the paper, again, the bias initialization mitigated this issue.
 
 ## Resources:
+https://github.com/yburda/iwae  
 https://github.com/addtt/ladder-vae-pytorch  
 https://github.com/xqding/Importance_Weighted_Autoencoders  
-https://github.com/yburda/iwae  
+https://github.com/xqding/AIWAE  
 https://github.com/ShwanMario/IWAE  
 https://github.com/AntixK/PyTorch-VAE  
 https://paperswithcode.com/paper/importance-weighted-autoencoders  
 https://github.com/casperkaae/LVAE/blob/master/run_models.py  
 https://github.com/yoonholee/pytorch-vae  
 https://github.com/abdulfatir/IWAE-tensorflow  
-https://github.com/xqding/AIWAE  
-https://arxiv.org/pdf/1602.02282.pdf  
-https://arxiv.org/pdf/1509.00519.pdf  
-https://arxiv.org/pdf/1902.02102.pdf  
 https://github.com/larsmaaloee/BIVA
 https://github.com/vlievin/biva-pytorch    
 https://github.com/casperkaae/parmesan  
 https://github.com/casperkaae/LVAE/blob/master/run_models.py  
-https://arxiv.org/pdf/1802.04537.pdf
 https://github.com/neha191091/IWAE/blob/master/iwae/experiments.py  
 https://github.com/jmtomczak/vae_vampprior  
 https://github.com/harvardnlp/sa-vae  
+https://arxiv.org/pdf/1602.02282.pdf  
+https://arxiv.org/pdf/1509.00519.pdf  
+https://arxiv.org/pdf/1902.02102.pdf  
+https://arxiv.org/pdf/1802.04537.pdf
+
 
 ### Two stochastic layers
 See 
@@ -150,5 +155,3 @@ See
 - [Ladder VAE](https://arxiv.org/pdf/1602.02282.pdf) and accompanying [github](https://github.com/casperkaae/LVAE)
 
 [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders) and [ShwanMario](https://github.com/ShwanMario/IWAE) train IWAEs with two stochastic layers, both without reaching Yburdas results, using a different training setup than me.  
-
-
