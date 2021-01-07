@@ -2,12 +2,6 @@
 
 Reproducing results from the [IWAE paper](https://arxiv.org/pdf/1509.00519.pdf) in TensorFlow 2. 
 
-## What can you do with this repo?
-- reproduce the results from the IWAE paper
-- run IWAE models with the DReG estimator
-- get posterior means using * self-normalized importance sampling *
-- draw samples from the true posterior using * sampling importance resampling * (coming)
-
 ## Usage
 The results for the model with 1 stochastic layer and 1, 5 or 50 importance samples can be obtained by running `main.py` with the default settings, adjusting the number of samples.
 ``` 
@@ -18,7 +12,7 @@ python main.py --n_samples          <# of importance samples, 5 by default>
 The model is investigated further in a series of tasks found in `./tasks`
 
 ## Results
-Samples (left) and mean function (right) when sampling from the prior, during training of an IWAE with 50 importance samples.
+Samples (left) and mean function (right) when sampling from the prior, during training of an IWAE with 50 importance samples.  
 <img src="results/iwae_50.gif" width="600" height="300" />
 
 Test-set log likelihoods are estimated using 5000 importance samples
@@ -60,25 +54,10 @@ A number of other repositories have reproduced results from the IWAE paper, see 
 - [yoonholee](https://github.com/yoonholee/pytorch-vae)
 
 ## TODO:
-Show true and variational posteriors
-Show active units
-Implement quantized distribution  
-Implement MIWAE  
-Show
-- SNIS
-- SIR
-Two layer model with 2 and 1 units, to investigate the marginal distribution in the first stochastic layer.  
+Display true and variational posteriors in 2D latent space  
+Active units  
 
 Note that pytorch dataloaders makes it easier to work with dynamically binarized mnist, see [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders/blob/master/model/vae_models.py)
-
-## Done:
-Implement [DReG](https://arxiv.org/abs/1810.04152)  
-Extend to two stochastic layers  
-2 layer:
-- posterior SNIS
-- PCA on the SNIS
-Conditional sampling in two-layer models, a la [addtt](https://github.com/addtt/ladder-vae-pytorch).  
-
 
 # Additional results:
 #### 1 stochastic layer VAE
