@@ -147,5 +147,3 @@ See
 - [ShwanMario](https://github.com/ShwanMario/IWAE)
 - [addtt](https://github.com/addtt/ladder-vae-pytorch)
 - [Ladder VAE](https://arxiv.org/pdf/1602.02282.pdf) and accompanying [github](https://github.com/casperkaae/LVAE)
-
-[xqding](https://github.com/xqding/Importance_Weighted_Autoencoders) and [ShwanMario](https://github.com/ShwanMario/IWAE) train IWAEs with two stochastic layers, both without reaching Yburdas results, using a different training setup than here.  
