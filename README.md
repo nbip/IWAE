@@ -47,7 +47,7 @@ The Doubly Reparameterized Gradient Estimator for Monte Carlo Objectives, [DReG]
 
 ## Comparisons
 A number of other repositories have reproduced results from the IWAE paper, see for example  
-- The original code acompanying the paper [yburda](https://github.com/yburda/iwae)  
+- [yburda](https://github.com/yburda/iwae), the original code acompanying the paper 
 - [abdulfatir](https://github.com/abdulfatir/IWAE-tensorflow)  
 - [shwanmario](https://github.com/ShwanMario/IWAE)  
 - [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders)
@@ -55,9 +55,8 @@ A number of other repositories have reproduced results from the IWAE paper, see 
 
 ## TODO:
 Display true and variational posteriors in 2D latent space  
-Active units  
-
-Note that pytorch dataloaders makes it easier to work with dynamically binarized mnist, see [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders/blob/master/model/vae_models.py)
+Investigate active units  
+It seems that pytorch dataloaders makes it easier to work with dynamically binarized mnist, see e.g. [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders/blob/master/model/vae_models.py).
 
 # Additional results:
 #### 1 stochastic layer VAE
@@ -75,25 +74,8 @@ Note that pytorch dataloaders makes it easier to work with dynamically binarized
 | VAE 50 | -83.89 | -84.78 |
 
 #### Test-set lower bounds during training: IWAE with DReG vs regular IWAE
-Test-set lower bounds for 1, 5 and 50 importance samples, with DReG and without. 
+Test-set lower bounds during training for 1, 5 and 50 importance samples, with the DReG estimator and with the regular IWAE estimator. The DReG elbos are consitently higher than the corresponding regular IWAE elbos.
 <img src="results/dreg_vs_iwae.png" width="356" height="274" />
-
-## Using warm-up, as suggested in [LVAE](https://arxiv.org/pdf/1602.02282.pdf)
-#### IWAE equation (8) with warm-up
-| Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
-| --- | --- | --- |
-| 1 |  | -86.76 |
-| 5 |  | -85.54 |
-| 50 |  | -84.78 |
-
-
-#### Standard VAE with warmup
-| Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
-| --- | --- | --- |
-| 1 |  | -86.76 |
-| 5 |  | -86.46 |
-| 50 |  | -86.35 |
-
 
 ## Resources:
 https://github.com/yburda/iwae  
@@ -121,8 +103,7 @@ https://arxiv.org/pdf/1902.02102.pdf
 
 
 ### Two stochastic layers
-See 
-- [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders/blob/master/model/vae_models.py)  
-- [ShwanMario](https://github.com/ShwanMario/IWAE)
-- [addtt](https://github.com/addtt/ladder-vae-pytorch)
-- [Ladder VAE](https://arxiv.org/pdf/1602.02282.pdf) and accompanying [github](https://github.com/casperkaae/LVAE)
+[xqding](https://github.com/xqding/Importance_Weighted_Autoencoders/blob/master/model/vae_models.py)  
+[ShwanMario](https://github.com/ShwanMario/IWAE)  
+[addtt](https://github.com/addtt/ladder-vae-pytorch)  
+[Ladder VAE](https://arxiv.org/pdf/1602.02282.pdf) and accompanying [github](https://github.com/casperkaae/LVAE)  
