@@ -1,4 +1,4 @@
-# IWAE
+# IWAE - Importance Weighted Autoencoder in Tensorflow 2
 
 Reproducing results from the [IWAE paper](https://arxiv.org/pdf/1509.00519.pdf) in TensorFlow 2. 
 
@@ -44,14 +44,6 @@ The Doubly Reparameterized Gradient Estimator for Monte Carlo Objectives, [DReG]
 `main.py`: original experiment with 1 or 2 stochastic layers.  
 `task01.py`: Use a 2D latent space to investigate both true and variational posteriors. We can use *self-normalized importance sampling* to estimate posterior means and *sampling importance resampling* to draw samples from the true posterior.  
 `task02.py`: Use the Double Reparameterized Gradient Estimator, [DReG](https://arxiv.org/pdf/1810.04152.pdf), to the original experiment.  
-
-## Comparisons
-A number of other repositories have reproduced results from the IWAE paper, see for example  
-- [yburda](https://github.com/yburda/iwae), the original code acompanying the paper 
-- [abdulfatir](https://github.com/abdulfatir/IWAE-tensorflow)  
-- [shwanmario](https://github.com/ShwanMario/IWAE)  
-- [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders)
-- [yoonholee](https://github.com/yoonholee/pytorch-vae)
 
 ## TODO:
 Display true and variational posteriors in 2D latent space  
