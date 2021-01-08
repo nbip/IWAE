@@ -1,4 +1,4 @@
-# IWAE - Importance Weighted Autoencoder in Tensorflow 2
+# IWAE - Importance Weighted Autoencoder in TensorFlow 2
 
 Reproducing results from the [IWAE paper](https://arxiv.org/pdf/1509.00519.pdf) in TensorFlow 2. 
 
