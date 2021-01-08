@@ -160,6 +160,7 @@ class IWAE(tf.keras.Model):
                 "iwae_eq14": iwae_eq14,
                 "z": z,
                 "snis_z": snis_z,
+                "al": al,
                 "logits": logits,
                 "lpxz": lpxz,
                 "lpz": lpz,
