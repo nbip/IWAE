@@ -153,6 +153,7 @@ class IWAE(tf.keras.Model):
                 "z2": z2,
                 "snis_z1": snis_z1,
                 "snis_z2": snis_z2,
+                "al": al,
                 "logits": logits,
                 "lpxz1": lpxz1,
                 "lpz1z2": lpz1z2,
