@@ -45,6 +45,11 @@ The Doubly Reparameterized Gradient Estimator for Monte Carlo Objectives, [DReG]
 `task01.py`: Use a 2D latent space to investigate both true and variational posteriors. We can use *self-normalized importance sampling* to estimate posterior means and *sampling importance resampling* to draw samples from the true posterior.  
 `task02.py`: Use the Double Reparameterized Gradient Estimator, [DReG](https://arxiv.org/pdf/1810.04152.pdf), to the original experiment.  
 
+### task01 results
+In an IWAE with a 2D latent space we can expect the true and variational posterior. In the two left most plots below are shown a digit from the test-set alongside its true and variational posteriors. The variational posterior is axis aligned and usually the more complex true posterior. To the right are shown 10000 samples from variational posterior and reconstructions of some of these. The bottom shows how *sampling-importance resampling*, using the self-normalized importance weights, can provide samples coming from the true posterior.   
+
+<img src="results/task01_50.gif" width="750" height="300" />
+
 ## TODO:
 Display true and variational posteriors in 2D latent space  
 Investigate active units  
