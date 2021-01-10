@@ -9,7 +9,9 @@ python main.py --n_samples          <# of importance samples, 5 by default>
                --objective          <choose vae_elbo or iwae_elbo, iwae_elbo by default>
                --stochastic_layers  <# of stochastic layers, 1 by default>
 ```
-The model is investigated further in a series of tasks found in `./tasks`
+The model is investigated further in a series of tasks found in `./tasks`.  
+`task01.py`: Use a 2D latent space to investigate both true and variational posteriors. We can use *self-normalized importance sampling* to estimate posterior means and *sampling importance resampling* to draw samples from the true posterior.  
+`task02.py`: Use the Double Reparameterized Gradient Estimator, [DReG](https://arxiv.org/pdf/1810.04152.pdf), to the original experiment.  
 
 ## Results
 Samples (left) and mean function (right) when sampling from the prior, during training of an IWAE with 50 importance samples.  
@@ -40,18 +42,14 @@ The Doubly Reparameterized Gradient Estimator for Monte Carlo Objectives, [DReG]
 | 5 | -84.90 | -85.18 |
 | 50 | -84.32 | -84.59 |
 
-## Tasks
-`main.py`: original experiment with 1 or 2 stochastic layers.  
-`task01.py`: Use a 2D latent space to investigate both true and variational posteriors. We can use *self-normalized importance sampling* to estimate posterior means and *sampling importance resampling* to draw samples from the true posterior.  
-`task02.py`: Use the Double Reparameterized Gradient Estimator, [DReG](https://arxiv.org/pdf/1810.04152.pdf), to the original experiment.  
-
-### task01 results
-In an IWAE with a 2D latent space we can expect the true and variational posterior. In the two left most plots below are shown a digit from the test-set alongside its true and variational posteriors. The variational posterior is axis aligned and usually the more complex true posterior. To the right are shown 10000 samples from variational posterior and reconstructions of some of these. The bottom shows how *sampling-importance resampling*, using the self-normalized importance weights, can provide samples coming from the true posterior.   
+### Variational and true posteriors
+In an IWAE with a 2D latent space we can inspect the true posterior, by evaluating 
+<img src="https://latex.codecogs.com/svg.latex?p(X=x,z)" /> over a grid of <img src="https://latex.codecogs.com/svg.latex?z" /> values.   
+In the two left most plots below are shown a digit from the test-set alongside its true and variational posteriors. The variational posterior is axis aligned and usually the more complex true posterior. To the right are shown 10000 samples from variational posterior and reconstructions of some of these. The bottom shows how *sampling-importance resampling*, using the self-normalized importance weights, can provide samples coming from the true posterior.   
 
 <img src="results/task01_50.gif" width="750" height="300" />
 
 ## TODO:
-Display true and variational posteriors in 2D latent space  
 Investigate active units  
 It seems that pytorch dataloaders makes it easier to work with dynamically binarized mnist, see e.g. [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders/blob/master/model/vae_models.py).
 
