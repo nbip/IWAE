@@ -17,7 +17,6 @@ import utils
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
-# TODO: match task01 experiment settings
 n_hidden = 200
 n_latent = 2
 string = "task01_{0}_{1}_{2}".format("iwae_elbo", 1, 50)

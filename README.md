@@ -43,9 +43,8 @@ The Doubly Reparameterized Gradient Estimator for Monte Carlo Objectives, [DReG]
 | 50 | -84.32 | -84.59 |
 
 ### Variational and true posteriors
-In an IWAE with a 2D latent space we can inspect the true posterior, by evaluating 
-<img src="https://latex.codecogs.com/svg.latex?p(X=x,z)" /> over a grid of <img src="https://latex.codecogs.com/svg.latex?z" /> values.   
-In the two left most plots below are shown a digit from the test-set alongside its true and variational posteriors. The variational posterior is axis aligned and usually the more complex true posterior. To the right are shown 10000 samples from variational posterior and reconstructions of some of these. The bottom shows how *sampling-importance resampling*, using the self-normalized importance weights, can provide samples coming from the true posterior.   
+In an IWAE with a 2D latent space we can inspect the true posterior, by evaluating over a grid.  
+In the two left most plots below are shown a digit from the test-set alongside its true and variational posteriors. The variational posterior is axis aligned and usually covers the more complex true posterior. To the right are shown samples from variational posterior and reconstructions of some of these. The bottom row shows how *sampling importance resampling*, using the self-normalized importance weights, can provide samples coming from the true posterior.   
 
 <img src="results/task01_50.gif" width="750" height="300" />
 
