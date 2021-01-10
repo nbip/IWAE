@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow_probability import distributions as tfd
-from tensorflow import keras
+import utils
 import matplotlib
 matplotlib.use('Agg')  # needed when running from commandline
 import matplotlib.pyplot as plt
@@ -15,26 +15,6 @@ plt.rcParams['axes.spines.top'] = False
 plt.rcParams['savefig.format'] = 'pdf'
 plt.rcParams['lines.linewidth'] = 2.5
 plt.rcParams['figure.autolayout'] = True
-
-
-def logmeanexp(log_w, axis):
-    max = tf.reduce_max(log_w, axis=axis)
-    return tf.math.log(tf.reduce_mean(tf.exp(log_w - max), axis=axis)) + max
-
-
-def get_bias():
-    # ---- For initializing the bias in the final Bernoulli layer for p(x|z)
-    (Xtrain, ytrain), (_, _) = keras.datasets.mnist.load_data()
-    Ntrain = Xtrain.shape[0]
-
-    # ---- reshape to vectors
-    Xtrain = Xtrain.reshape(Ntrain, -1) / 255
-
-    train_mean = np.mean(Xtrain, axis=0)
-
-    bias = -np.log(1. / np.clip(train_mean, 0.001, 0.999) - 1.)
-
-    return tf.constant_initializer(bias)
 
 
 class BasicBlock(tf.keras.Model):
@@ -88,7 +68,7 @@ class Decoder(tf.keras.Model):
                 tf.keras.layers.Dense(n_hidden, activation=tf.nn.tanh),
                 tf.keras.layers.Dense(n_hidden, activation=tf.nn.tanh),
                 tf.keras.layers.Dense(784, activation=None,
-                                      bias_initializer=get_bias())
+                                      bias_initializer=utils.get_bias())
             ]
         )
 
@@ -138,7 +118,7 @@ class IWAE(tf.keras.Model):
 
         # ---- IWAE elbos
         # eq (8): logmeanexp over samples and mean over batch
-        iwae_elbo = tf.reduce_mean(logmeanexp(log_w, axis=0), axis=-1)
+        iwae_elbo = tf.reduce_mean(utils.logmeanexp(log_w, axis=0), axis=-1)
 
         # eq (14):
         m = tf.reduce_max(log_w, axis=0, keepdims=True)

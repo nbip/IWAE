@@ -11,13 +11,13 @@ python main.py --n_samples          <# of importance samples, 5 by default>
 ```
 The model is investigated further in a series of tasks found in `./tasks`.  
 `task01.py`: Use a 2D latent space to investigate both true and variational posteriors. We can use *self-normalized importance sampling* to estimate posterior means and *sampling importance resampling* to draw samples from the true posterior.  
-`task02.py`: Use the Doubly Reparameterized Gradient Estimator, [DReG](https://arxiv.org/pdf/1810.04152.pdf), to the original experiment.  
+`task02.py`: Apply the Doubly Reparameterized Gradient Estimator, [DReG](https://arxiv.org/pdf/1810.04152.pdf), to the original experiment.  
 
 ## Results
-Samples (left) and mean function (right) when sampling from the prior, during training of an IWAE with 50 importance samples.  
+Samples (left) and mean function (right) when sampling from the prior, during training of an IWAE with 50 importance samples.    
 <img src="results/iwae_50.gif" width="600" height="300" />
 
-Test-set log likelihoods are estimated using 5000 importance samples
+Test-set log likelihoods as estimated using 5000 importance samples:
 
 #### 1 stochastic layer
 | Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
@@ -43,8 +43,8 @@ The Doubly Reparameterized Gradient Estimator for Monte Carlo Objectives, [DReG]
 | 50 | -84.32 | -84.59 |
 
 ### Variational and true posteriors
-In an IWAE with a 2D latent space we can inspect the true posterior, by evaluating over a grid.  
-In the two left most plots below are shown a digit from the test-set alongside its true and variational posteriors. The variational posterior is axis aligned and usually covers the more complex true posterior. To the right are shown samples from variational posterior and reconstructions of some of these. The bottom row shows how *sampling importance resampling*, using the self-normalized importance weights, can provide samples coming from the true posterior.   
+In an IWAE with a 2D latent space we can inspect the true posterior, by evaluating it over a grid.  
+In the two left most plots below are shown a digit from the test-set alongside its true and variational posteriors. The variational posterior is axis aligned and usually covers the more complex true posterior. To the right are shown samples from the variational posterior and reconstructions of some of these. The bottom row shows how *sampling importance resampling*, using the self-normalized importance weights, can provide samples from the true posterior.   
 
 <img src="results/task01.gif" width="750" height="300" />
 
