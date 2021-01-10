@@ -50,7 +50,6 @@ In the two left most plots below are shown a digit from the test-set alongside i
 
 ## TODO:
 Investigate active units  
-It seems that pytorch dataloaders makes it easier to work with dynamically binarized mnist, see e.g. [xqding](https://github.com/xqding/Importance_Weighted_Autoencoders/blob/master/model/vae_models.py).
 
 # Additional results:
 #### 1 stochastic layer VAE
