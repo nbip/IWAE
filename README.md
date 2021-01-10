@@ -6,12 +6,12 @@ Reproducing results from the [IWAE paper](https://arxiv.org/pdf/1509.00519.pdf) 
 The results for the model with 1 stochastic layer and 1, 5 or 50 importance samples can be obtained by running `main.py` with the default settings, adjusting the number of samples.
 ``` 
 python main.py --n_samples          <# of importance samples, 5 by default>  
-               --objective          <choose vae_elbo or iwae_elbo, iwae_elbo by default>
+               --objective          <choose iwae_elbo or vae_elbo, iwae_elbo by default>
                --stochastic_layers  <# of stochastic layers, 1 by default>
 ```
 The model is investigated further in a series of tasks found in `./tasks`.  
 `task01.py`: Use a 2D latent space to investigate both true and variational posteriors. We can use *self-normalized importance sampling* to estimate posterior means and *sampling importance resampling* to draw samples from the true posterior.  
-`task02.py`: Use the Double Reparameterized Gradient Estimator, [DReG](https://arxiv.org/pdf/1810.04152.pdf), to the original experiment.  
+`task02.py`: Use the Doubly Reparameterized Gradient Estimator, [DReG](https://arxiv.org/pdf/1810.04152.pdf), to the original experiment.  
 
 ## Results
 Samples (left) and mean function (right) when sampling from the prior, during training of an IWAE with 50 importance samples.  
@@ -48,9 +48,6 @@ In the two left most plots below are shown a digit from the test-set alongside i
 
 <img src="results/task01_50.gif" width="750" height="300" />
 
-## TODO:
-Investigate active units  
-
 # Additional results:
 #### 1 stochastic layer VAE
 | Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
@@ -69,6 +66,9 @@ Investigate active units
 #### Test-set lower bounds during training: IWAE with DReG vs regular IWAE
 Test-set lower bounds during training for 1, 5 and 50 importance samples, with the DReG estimator and with the regular IWAE estimator. The DReG elbos are consitently higher than the corresponding regular IWAE elbos.
 <img src="results/dreg_vs_iwae.png" width="356" height="274" />
+
+## TODO:
+Investigate active units  
 
 ## Resources:
 https://github.com/yburda/iwae  
