@@ -3,23 +3,31 @@ import sys
 import numpy as np
 import tensorflow as tf
 import tensorflow.keras as keras
+from tensorflow_probability import distributions as tfd
 import matplotlib
 matplotlib.use('Agg')  # needed when running from commandline
 import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 from scipy.special import logsumexp
+from scipy.special import softmax
 sys.path.insert(0, '../src')
+print(os.getcwd())
 import iwae1
 import utils
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
-# TODO: match task01 experiment settings
 n_hidden = 200
 n_latent = 2
 string = "task01_{0}_{1}_{2}".format("iwae_elbo", 1, 50)
 n_examples = 20
-L = 1000
+L = 10000
+fs = 25  # fintsize
+lw = 3   # line width
+
+# ---- set random seeds
+np.random.seed(123)
+tf.random.set_seed(123)
 
 # ---- load model
 model = iwae1.IWAE(n_hidden, n_latent)
@@ -67,12 +75,13 @@ for i, x in enumerate(Xtest[:n_examples, :]):
 
     # ---- find the variational posterior
     res = model(x[None, :], L)
-    z = res["z"]
+    z = res["z"].numpy().squeeze()
     snis_z = res["snis_z"]
     # al = res["al"]
     _, qzx = model.encoder(x[None, :], 1)
     q_mu = qzx.loc[0].numpy()
     q_std = qzx.scale[0].numpy()
+    qzx = tfd.Normal(q_mu, q_std)
 
     # ---- then make a grid near the variational posterior
     scale = 2
@@ -101,8 +110,8 @@ for i, x in enumerate(Xtest[:n_examples, :]):
     # ---- true posterior
     plt.clf()
     fig, ax = plt.subplots()
-    ax.contour(X, Y, prior_pdf, 5, cmap='RdGy_r', linewidths=1)
-    # ax.contour(X1, Y1, np.exp(log_posterior) + 1e-16, 5, cmap='RdGy_r', linewidths=1)
+    # ax.contour(X, Y, prior_pdf, 5, cmap='RdGy_r', linewidths=1)
+    ax.contour(X1, Y1, np.exp(log_posterior) + 1e-16, 5, cmap='RdGy_r', linewidths=1)
     ax.imshow(np.exp(log_posterior), cmap='gray_r',
               extent=[range_x[0], range_x[1], range_y[0], range_y[1]],
               origin='lower')
@@ -114,3 +123,183 @@ for i, x in enumerate(Xtest[:n_examples, :]):
     plt.savefig('../results/{0}_true_posterior_{1}'.format(string, i))
     plt.close()
 
+    # ---- variational posterior
+    variational_posterior = tf.reduce_sum(qzx.log_prob(grid1), axis=-1).numpy().reshape(n2, n1)
+
+    plt.clf()
+    fig, ax = plt.subplots()
+    ax.contour(X, Y, prior_pdf, 5, cmap='RdGy_r', linewidths=1)
+    ax.contour(X1, Y1, np.exp(variational_posterior) + 1e-16, 5, cmap='RdGy_r', linewidths=1)
+    # ax.imshow(np.exp(variational_posterior), cmap='gray_r',
+    #           extent=[range_x[0], range_x[1], range_y[0], range_y[1]],
+    #           origin='lower')
+    ax.axis('equal')
+    plt.savefig('../results/{0}_variational_posterior_{1}'.format(string, i))
+    plt.close()
+
+    # ---- true and variational posterior together
+    plt.clf()
+    fig, ax = plt.subplots()
+    # ax.contour(X, Y, prior_pdf, 5, cmap='RdGy_r', linewidths=1)
+    ax.contour(X1, Y1, np.exp(variational_posterior) + 1e-16, 5, cmap='Purples', linewidths=1)
+    ax.contour(X1, Y1, np.exp(log_posterior) + 1e-16, 5, cmap='RdGy_r', linewidths=1)
+    ax.imshow(np.exp(log_posterior), cmap='gray_r',
+              extent=[range_x[0], range_x[1], range_y[0], range_y[1]],
+              origin='lower')
+    ax.axis('equal')
+    ax.spines['top'].set_visible(True)
+    ax.spines['right'].set_visible(True)
+    ax.set_xlim([range_x[0], range_x[1]])
+    ax.set_ylim([range_y[0], range_y[1]])
+    plt.savefig('../results/{0}_true_and_variational_posterior_{1}'.format(string, i))
+    plt.close()
+
+    # ---- samples from the variational posterior
+    n_samples = 200
+    plt.clf()
+    fig, ax = plt.subplots()
+    # ax.contour(X, Y, prior_pdf, 5, cmap='RdGy_r', linewidths=1)
+    ax.contour(X1, Y1, np.exp(variational_posterior) + 1e-16, 5, cmap='Purples', linewidths=1)
+    # ax.contour(X1, Y1, np.exp(log_posterior) + 1e-16, 5, cmap='RdGy_r', linewidths=1)
+    ax.imshow(np.exp(log_posterior), cmap='gray_r',
+              extent=[range_x[0], range_x[1], range_y[0], range_y[1]],
+              origin='lower')
+    ax.scatter(z[:, 0], z[:, 1], marker='.', alpha=0.3, color="Purple")
+    ax.axis('equal')
+    ax.spines['top'].set_visible(True)
+    ax.spines['right'].set_visible(True)
+    ax.set_xlim([range_x[0], range_x[1]])
+    ax.set_ylim([range_y[0], range_y[1]])
+    plt.savefig('../results/{0}_variational_posterior_samples_{1}'.format(string, i))
+    plt.close()
+
+    # ---- sampling importance resampling
+    # al = res["al"].numpy()
+    lpxz = res["lpxz"].numpy().squeeze()
+    lqzx = res["lqzx"].numpy().squeeze()
+    lpz = res["lpz"].numpy().squeeze()
+
+    log_w = lpxz + lpz - lqzx
+
+    # self-normalized importance weights
+    al = softmax(log_w, axis=0)
+
+    # sample from the z-samples according to the importance weights
+    idx = np.random.choice(np.arange(0, z.shape[0]), size=n_samples, replace=False, p=al)
+    z_sir = z[idx]
+
+    plt.clf()
+    fig, ax = plt.subplots()
+    # ax.contour(X, Y, prior_pdf, 5, cmap='RdGy_r', linewidths=1)
+    ax.contour(X1, Y1, np.exp(variational_posterior) + 1e-16, 5, cmap='Purples', linewidths=1)
+    # ax.contour(X1, Y1, np.exp(log_posterior) + 1e-16, 5, cmap='RdGy_r', linewidths=1)
+    ax.imshow(np.exp(log_posterior), cmap='gray_r',
+              extent=[range_x[0], range_x[1], range_y[0], range_y[1]],
+              origin='lower')
+    ax.scatter(z_sir[:n_samples, 0], z_sir[:n_samples, 1], marker='.', alpha=0.3, color="Purple")
+    ax.axis('equal')
+    ax.spines['top'].set_visible(True)
+    ax.spines['right'].set_visible(True)
+    ax.set_xlim([range_x[0], range_x[1]])
+    ax.set_ylim([range_y[0], range_y[1]])
+    plt.savefig('../results/{0}_sir_posterior_samples_{1}'.format(string, i))
+    plt.close()
+
+    # ---- reconstructions using regular samples from the variational posterior
+    logits = res["logits"].numpy().squeeze()
+    pxz = tfd.Bernoulli(logits=logits)
+    x_samples = pxz.sample().numpy()
+
+    n = 5
+    canvas1 = np.zeros((n * 28, n * 28))
+
+    for j in range(n):
+        for k in range(n):
+            canvas1[j * 28: (j + 1) * 28, k * 28: (k + 1) * 28] = x_samples[j * n + k].reshape(28, 28)
+
+    plt.clf()
+    fig, ax = plt.subplots()
+    ax.imshow(canvas1, cmap='gray_r')
+    ax.axis('off')
+    plt.savefig('../results/{0}_variational_posterior_rec_{1}'.format(string, i))
+    plt.close()
+
+    # ---- reconstructions using SIR samples
+    x_samples_sir = x_samples[idx]
+
+    canvas2 = np.zeros((n * 28, n * 28))
+
+    for j in range(n):
+        for k in range(n):
+            canvas2[j * 28: (j + 1) * 28, k * 28: (k + 1) * 28] = x_samples_sir[j * n + k].reshape(28, 28)
+
+    plt.clf()
+    fig, ax = plt.subplots()
+    ax.imshow(canvas2, cmap='gray_r')
+    ax.axis('off')
+    plt.savefig('../results/{0}_variational_posterior_sir_rec_{1}'.format(string, i))
+    plt.close()
+
+    # ---- all in one figure
+    plt.clf()
+    fig, ax = plt.subplots(2,4, figsize=(20, 8))
+
+    # ---- original digit
+    ax[0, 0].imshow(Xtest[i, :].reshape(28, 28), cmap='gray_r')
+    ax[0, 0].set_title('original digit', fontsize=fs)
+    ax[0, 0].axis('off')
+
+    # ---- true and variational posterior
+    ax[0, 1].contour(X1, Y1, np.exp(variational_posterior) + 1e-16, 5, cmap='Purples', linewidths=3)
+    ax[0, 1].contour(X1, Y1, np.exp(log_posterior) + 1e-16, 5, cmap='RdGy_r', linewidths=3)
+    ax[0, 1].imshow(np.exp(log_posterior), cmap='gray_r',
+              extent=[range_x[0], range_x[1], range_y[0], range_y[1]],
+              origin='lower')
+    ax[0, 1].axis('equal')
+    ax[0, 1].spines['top'].set_visible(True)
+    ax[0, 1].spines['right'].set_visible(True)
+    ax[0, 1].set_xlim([range_x[0], range_x[1]])
+    ax[0, 1].set_ylim([range_y[0], range_y[1]])
+    ax[0, 1].set_title('true and variational \nposterior', fontsize=fs)
+
+    # ---- samples from the variational posterior
+    ax[0, 2].contour(X1, Y1, np.exp(variational_posterior) + 1e-16, 5, cmap='Purples', linewidths=3)
+    ax[0, 2].imshow(np.exp(log_posterior), cmap='gray_r',
+              extent=[range_x[0], range_x[1], range_y[0], range_y[1]],
+              origin='lower')
+    ax[0, 2].scatter(z[:, 0], z[:, 1], marker='.', alpha=0.3, color="Purple")
+    ax[0, 2].axis('equal')
+    ax[0, 2].spines['top'].set_visible(True)
+    ax[0, 2].spines['right'].set_visible(True)
+    ax[0, 2].set_xlim([range_x[0], range_x[1]])
+    ax[0, 2].set_ylim([range_y[0], range_y[1]])
+    ax[0, 2].set_title('variational posterior \nsamples', fontsize=fs)
+
+    # ---- sampling importance resampling
+    ax[1, 2].contour(X1, Y1, np.exp(variational_posterior) + 1e-16, 5, cmap='Purples', linewidths=3)
+    ax[1, 2].imshow(np.exp(log_posterior), cmap='gray_r',
+              extent=[range_x[0], range_x[1], range_y[0], range_y[1]],
+              origin='lower')
+    ax[1, 2].scatter(z_sir[:n_samples, 0], z_sir[:n_samples, 1], marker='.', alpha=0.3, color="Purple")
+    ax[1, 2].axis('equal')
+    ax[1, 2].spines['top'].set_visible(True)
+    ax[1, 2].spines['right'].set_visible(True)
+    ax[1, 2].set_xlim([range_x[0], range_x[1]])
+    ax[1, 2].set_ylim([range_y[0], range_y[1]])
+    ax[1, 2].set_title('SIR', fontsize=fs)
+
+    # ---- variational posterior sample reconstructions
+    ax[0, 3].imshow(canvas1, cmap='gray_r')
+    ax[0, 3].axis('off')
+    ax[0, 3].set_title('reconstrictions', fontsize=fs)
+
+    # ---- SIR reconstructions
+    ax[1, 3].imshow(canvas2, cmap='gray_r')
+    ax[1, 3].axis('off')
+    # ax[1, 3].set_title('Reconstructions of SIR samples', fontsize=fs)
+
+    ax[1, 0].axis('off')
+    ax[1, 1].axis('off')
+
+    plt.savefig('../results/{0}_all_in_one_{1}.png'.format(string, i))
+    plt.close()
