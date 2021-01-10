@@ -8,9 +8,11 @@ import datetime
 import time
 import sys
 sys.path.insert(0, './src')
+sys.path.insert(0, './tasks')
 import utils
 import iwae1
 import iwae2
+import plot_task01
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--stochastic_layers", type=int, default=1, choices=[1, 2], help="number of stochastic layers in the model")
@@ -180,3 +182,5 @@ test_elbo_metric.reset_states()
 
 print("Test-set {0} sample log likelihood estimate: {1:.4f}".format(L, test_set_llh))
 
+# ---- plot variational and true posteriors
+plot_task01.plot(model, Xtest, string)
