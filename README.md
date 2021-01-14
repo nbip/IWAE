@@ -49,7 +49,7 @@ In the two left most plots below are shown a digit from the test-set alongside i
 <img src="results/task01.gif" width="750" height="300" />
 
 ### Latent representations with 2 stochastic layers
-In `task03.py` we fit an IWAE with 2 stochastic layers of dimension 4 and 2 respectively. The (PCA of) the latent representations are seen below. The expectation of the latent representations are obtained using self-normalized importance sampling. 
+In `task03.py` we fit an IWAE with 2 stochastic layers of dimension 4 and 2 respectively. The (PCA of) the latent representations are seen below. The expectation of the latent representations are obtained using self-normalized importance sampling. The first layer to the left and the second layer to the right.
 
 <img src="results/task03_iwae_elbo_2_50_posterior_z1_at_epoch_3279.png" width="320" height="240" /> <img src="results/task03_iwae_elbo_2_50_posterior_z2_at_epoch_3279.png" width="320" height="240" />
 
