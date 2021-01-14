@@ -1,10 +1,13 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow_probability import distributions as tfd
-import utils
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 import matplotlib
 matplotlib.use('Agg')  # needed when running from commandline
 import matplotlib.pyplot as plt
+import cycler
+import utils
 
 
 # ---- plot settings
@@ -15,6 +18,8 @@ plt.rcParams['axes.spines.top'] = False
 plt.rcParams['savefig.format'] = 'pdf'
 plt.rcParams['lines.linewidth'] = 2.5
 plt.rcParams['figure.autolayout'] = True
+color = plt.cm.viridis(np.linspace(0, 1, 10))
+plt.rcParams['axes.prop_cycle'] = cycler.cycler('color', color)
 
 
 class BasicBlock(tf.keras.Model):
@@ -275,15 +280,20 @@ class IWAE(tf.keras.Model):
         snis_z2 = res["snis_z2"]
 
         # pca
-        from sklearn.decomposition import PCA
+        scaler = StandardScaler()
+
+        z1 = scaler.fit_transform(snis_z1)
+
         pca = PCA(n_components=2)
-        pca.fit(snis_z1)
-        z = pca.transform(snis_z1)
+        pca.fit(z1)
+        z1 = pca.transform(z1)
 
         plt.clf()
         for c in np.unique(y):
-            plt.scatter(z[y == c, 0], z[y == c, 1], s=10, label=str(c))
-        plt.legend()
+            plt.scatter(z1[y == c, 0], z1[y == c, 1], s=10, label=str(c))
+        plt.legend(loc=(1.04,0))
+        plt.xlim([-4, 4])
+        plt.ylim([-4, 4])
         plt.title("epoch {:04d}".format(epoch), fontsize=50)
         plt.savefig('./results/' + string + '_posterior_z1_at_epoch_{:04d}.png'.format(epoch))
         plt.close()
@@ -295,7 +305,9 @@ class IWAE(tf.keras.Model):
         plt.clf()
         for c in np.unique(y):
             plt.scatter(z[y == c, 0], z[y == c, 1], s=10, label=str(c))
-        plt.legend()
+        plt.legend(loc=(1.04,0))
+        plt.xlim([-4, 4])
+        plt.ylim([-4, 4])
         plt.title("epoch {:04d}".format(epoch), fontsize=50)
         plt.savefig('./results/' + string + '_posterior_z2_at_epoch_{:04d}.png'.format(epoch))
         plt.close()
