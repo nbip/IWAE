@@ -19,21 +19,21 @@ The model is investigated further in a series of tasks found in `./tasks`.
 Samples (left) and mean function (right) when sampling from the prior, during training of an IWAE with 50 importance samples.    
 <img src="results/iwae_50.gif" width="600" height="300" />
 
-Test-set log likelihoods as estimated using $$k=5000$$ importance samples:
+Test-set log likelihoods as estimated using k=5000 importance samples:
 
 #### 1 stochastic layer
-| $$k$$ | Test-set LLH | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
+| Method | Test-set LLH | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
 | --- | --- | --- |
-| 1 | -86.35 | -86.76 |
-| 5 | -85.18 | -85.54 |
-| 50 | -84.59 | -84.78 |
+| IWAE k=1 | -86.35 | -86.76 |
+| IWAE k=5 | -85.18 | -85.54 |
+| IWAE k=50 | -84.59 | -84.78 |
 
 #### 2 stochastic layers
 | Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
 | --- | --- | --- |
-| 1 | -84.83 | -85.33 |
-| 5 | -83.48 | -83.89 |
-| 50 | -82.82 | -82.90 |
+| IWAE k=1 | -84.83 | -85.33 |
+| IWAE k=5 | -83.48 | -83.89 |
+| IWAE k=50 | -82.82 | -82.90 |
 
 # Additional results:
 ### DReG estimator, 1 stochastic layer
@@ -41,9 +41,9 @@ The Doubly Reparameterized Gradient Estimator for Monte Carlo Objectives, [DReG]
 
 | Method | DReG Test-set LLH | Standard IWAE Test-set LLH |
 | --- | --- | --- |
-| 1 | -86.08 | -86.35 |
-| 5 | -84.90 | -85.18 |
-| 50 | -84.32 | -84.59 |
+| IWAE k=1 | -86.08 | -86.35 |
+| IWAE k=5 | -84.90 | -85.18 |
+| IWAE k=50 | -84.32 | -84.59 |
 
 ### Variational and true posteriors
 In an IWAE with a 2D latent space we can inspect the true posterior, by evaluating it over a grid. This is done in `task01.py`.  
@@ -59,25 +59,25 @@ In `task03.py` we fit an IWAE with 2 stochastic layers of dimension 4 and 2 resp
 ### 1 stochastic layer VAE
 | Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
 | --- | --- | --- |
-| VAE 1 | -86.35 | -86.76 |
-| VAE 5 | -86.10 | -86.47 |
-| VAE 50 | -86.06 | -86.35 |
+| VAE k=1 | -86.35 | -86.76 |
+| VAE k=5 | -86.10 | -86.47 |
+| VAE k=50 | -86.06 | -86.35 |
 
 ### 2 stochastic layers VAE
 | Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
 | --- | --- | --- |
-| VAE 1 | -84.83 | -85.33 |
-| VAE 5 | -84.08 | -85.01 |
-| VAE 50 | -83.89 | -84.78 |
+| VAE k=1 | -84.83 | -85.33 |
+| VAE k=5 | -84.08 | -85.01 |
+| VAE k=50 | -83.89 | -84.78 |
 
 ### CVAE 1 stochastic layer
 The [Conditional VAE](https://proceedings.neurips.cc/paper/2015/file/8d55a249e6baa5c06772297520da2051-Paper.pdf) (IWAE in this case) can be coditioned on some context, in this case the image labels. The prior can be the usual prior (`task05.py`) or conditional on the label as well (`task04.py`). In these results the prior is conditional on the label.
 
 | Method | Test-set LLH (this repo) |
 | --- | --- | 
-| 1 | -82.32 | 
-| 5 | -81.41 | 
-| 50 | -80.78 | 
+| CIWAE k=1 | -82.32 | 
+| CIWAE k=5 | -81.41 | 
+| CIWAE k=50 | -80.78 | 
   
 <img src="results/task04_iwae_elbo_1_50_image_at_epoch_3279.png" width="600" height="300" />
 
