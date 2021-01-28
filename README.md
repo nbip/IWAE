@@ -22,7 +22,7 @@ Samples (left) and mean function (right) when sampling from the prior, during tr
 Test-set log likelihoods as estimated using 5000 importance samples:
 
 #### 1 stochastic layer
-| Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
+| Method | Test-set LLH | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
 | --- | --- | --- |
 | 1 | -86.35 | -86.76 |
 | 5 | -85.18 | -85.54 |
@@ -73,11 +73,11 @@ In `task03.py` we fit an IWAE with 2 stochastic layers of dimension 4 and 2 resp
 ### CVAE 1 stochastic layer
 The [Conditional VAE](https://proceedings.neurips.cc/paper/2015/file/8d55a249e6baa5c06772297520da2051-Paper.pdf) (IWAE in this case) can be coditioned on some context, in this case the image labels. The prior can be the usual prior (`task05.py`) or conditional on the label as well (`task04.py`). In these results the prior is conditional on the label.
 
-| Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
-| --- | --- | --- |
-| 1 | -82.32 | -86.76 |
-| 5 | -81.41 | -85.54 |
-| 50 | -80.78 | -84.78 |
+| Method | Test-set LLH (this repo) |
+| --- | --- | 
+| 1 | -82.32 | 
+| 5 | -81.41 | 
+| 50 | -80.78 | 
   
 <img src="results/task04_iwae_elbo_1_50_image_at_epoch_3279.png" width="600" height="300" />
 
