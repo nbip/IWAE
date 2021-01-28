@@ -19,10 +19,10 @@ The model is investigated further in a series of tasks found in `./tasks`.
 Samples (left) and mean function (right) when sampling from the prior, during training of an IWAE with 50 importance samples.    
 <img src="results/iwae_50.gif" width="600" height="300" />
 
-Test-set log likelihoods as estimated using 5000 importance samples:
+Test-set log likelihoods as estimated using $$k=5000$$ importance samples:
 
 #### 1 stochastic layer
-| Method | Test-set LLH | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
+| $$k$$ | Test-set LLH | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
 | --- | --- | --- |
 | 1 | -86.35 | -86.76 |
 | 5 | -85.18 | -85.54 |
