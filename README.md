@@ -36,7 +36,7 @@ Test-set log likelihoods as estimated using 5000 importance samples:
 | 50 | -82.82 | -82.90 |
 
 # Additional results:
-#### DReG estimator, 1 stochastic layer
+### DReG estimator, 1 stochastic layer
 The Doubly Reparameterized Gradient Estimator for Monte Carlo Objectives, [DReG](https://arxiv.org/pdf/1810.04152.pdf), provides even lower variance gradients for the inference network, than just using the reparameterization trick. This is implemented in `task02.py`.  
 
 | Method | DReG Test-set LLH | Standard IWAE Test-set LLH |
@@ -56,21 +56,21 @@ In `task03.py` we fit an IWAE with 2 stochastic layers of dimension 4 and 2 resp
 
 <img src="results/task03_iwae_elbo_2_50_posterior_z1_at_epoch_3279.png" width="320" height="240" /> <img src="results/task03_iwae_elbo_2_50_posterior_z2_at_epoch_3279.png" width="320" height="240" />
 
-#### 1 stochastic layer VAE
+### 1 stochastic layer VAE
 | Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
 | --- | --- | --- |
 | VAE 1 | -86.35 | -86.76 |
 | VAE 5 | -86.10 | -86.47 |
 | VAE 50 | -86.06 | -86.35 |
 
-#### 2 stochastic layers VAE
+### 2 stochastic layers VAE
 | Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
 | --- | --- | --- |
 | VAE 1 | -84.83 | -85.33 |
 | VAE 5 | -84.08 | -85.01 |
 | VAE 50 | -83.89 | -84.78 |
 
-#### CVAE 1 stochastic layer
+### CVAE 1 stochastic layer
 The [Conditional VAE](https://proceedings.neurips.cc/paper/2015/file/8d55a249e6baa5c06772297520da2051-Paper.pdf) (IWAE in this case) can be coditioned on some context, in this case the image labels. The prior can be the usual prior (`task05.py`) or conditional on the label as well (`task04.py`). In these results the prior is conditional on the label.
 
 | Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
