@@ -73,7 +73,7 @@ In `task03.py` we fit an IWAE with 2 stochastic layers of dimension 4 and 2 resp
 ### CVAE 1 stochastic layer
 The [Conditional VAE](https://proceedings.neurips.cc/paper/2015/file/8d55a249e6baa5c06772297520da2051-Paper.pdf) (IWAE in this case) can be coditioned on some context, in this case the image labels. The prior can be the usual prior (`task05.py`) or conditional on the label as well (`task04.py`). In these results the prior is conditional on the label.
 
-| Method | Test-set LLH (this repo) |
+| Method | Test-set LLH |
 | --- | --- | 
 | CIWAE k=1 | -82.32 | 
 | CIWAE k=5 | -81.41 | 
