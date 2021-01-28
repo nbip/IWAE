@@ -45,7 +45,7 @@ args = parser.parse_args()
 print(args)
 
 # ---- string describing the experiment, to use in tensorboard and plots
-string = "task04_{0}_{1}_{2}".format(args.objective, args.stochastic_layers, args.n_samples)
+string = "task05_{0}_{1}_{2}".format(args.objective, args.stochastic_layers, args.n_samples)
 
 # ---- set the visible GPU devices
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
@@ -105,8 +105,6 @@ class CIWAE(iwae1.IWAE):
                  **kwargs):
         super(CIWAE, self).__init__(n_hidden, n_latent, **kwargs)
 
-        self.conditional_prior_network = iwae1.BasicBlock(n_hidden, n_latent, **kwargs)
-
     def call(self, x, y, n_samples, beta=1.0):
 
         # ---- encode
@@ -118,26 +116,21 @@ class CIWAE(iwae1.IWAE):
         zy = tf.concat([z, y_onehot], axis=-1)
         logits, pxzy = self.decoder(zy)
 
-        # ---- conditional prior
-        pzy = self.conditional_prior_network(tf.one_hot(tf.cast(y, tf.uint8), depth=10))
-
         # ---- the prior does not have to be conditional on y
-        # ---- keeping a standard normal prior makes plotting easier in the end
-        # pz = tfd.Normal(0, 1)
+        pz = tfd.Normal(0, 1)
 
         # ---- loss
-        lpzy = tf.reduce_sum(pzy.log_prob(z), axis=-1)
-        # lpzy = tf.reduce_sum(pz.log_prob(z), axis=-1)
+        lpz = tf.reduce_sum(pz.log_prob(z), axis=-1)
 
         lqzxy = tf.reduce_sum(qzxy.log_prob(z), axis=-1)
 
         lpxzy = tf.reduce_sum(pxzy.log_prob(x), axis=-1)
 
-        log_w = lpxzy + beta * (lpzy - lqzxy)
+        log_w = lpxzy + beta * (lpz - lqzxy)
 
         # ---- regular VAE elbos
         kl = tf.reduce_sum(tfd.kl_divergence(qzxy, pz), axis=-1)
-        kl2 = -tf.reduce_mean(lpzy - lqzxy, axis=0)
+        kl2 = -tf.reduce_mean(lpz - lqzxy, axis=0)
 
         # mean over samples and batch
         vae_elbo = tf.reduce_mean(tf.reduce_mean(log_w, axis=0), axis=-1)
@@ -170,7 +163,7 @@ class CIWAE(iwae1.IWAE):
                 "al": al,
                 "logits": logits,
                 "lpxzy": lpxzy,
-                "lpzy": lpzy,
+                "lpz": lpz,
                 "lqzxy": lqzxy}
 
     @tf.function
@@ -192,12 +185,7 @@ class CIWAE(iwae1.IWAE):
 
         y_onehot = tf.one_hot(tf.repeat(y, z.shape[0]), depth=10)
 
-        pzy = self.conditional_prior_network(y_onehot)
-
-        # z = pzy.sample()
-        z_new = pzy.loc + pzy.scale * z
-
-        zy = tf.concat([z_new, y_onehot], axis=-1)
+        zy = tf.concat([z, y_onehot], axis=-1)
 
         logits = self.decoder.decode_z_to_x(zy)
 
@@ -264,7 +252,7 @@ class CIWAE(iwae1.IWAE):
         tf.summary.scalar('Evaluation/iwae_elbo', res["iwae_elbo"], step=step)
         tf.summary.scalar('Evaluation/lpxzy', res['lpxzy'].numpy().mean(), step=step)
         tf.summary.scalar('Evaluation/lqzxy', res['lqzxy'].numpy().mean(), step=step)
-        tf.summary.scalar('Evaluation/lpzy', res['lpzy'].numpy().mean(), step=step)
+        tf.summary.scalar('Evaluation/lpz', res['lpz'].numpy().mean(), step=step)
 
 
 # ---- instantiate the model, optimizer and metrics
