@@ -2,19 +2,6 @@
 
 Reproducing results from the [IWAE paper](https://arxiv.org/pdf/1509.00519.pdf) in TensorFlow 2. 
 
-## Usage
-The results for the model with 1 stochastic layer and 1, 5 or 50 importance samples can be obtained by running `main.py` with the default settings, adjusting the number of samples.
-``` 
-python main.py --n_samples          <# of importance samples, 5 by default>  
-               --objective          <choose iwae_elbo or vae_elbo, iwae_elbo by default>
-               --stochastic_layers  <# of stochastic layers, 1 by default>
-```
-The model is investigated further in a series of tasks found in `./tasks`.  
-`task01.py`: Use a 2D latent space to investigate both true and variational posteriors. We can use *self-normalized importance sampling* to estimate posterior means and *sampling importance resampling* to draw samples from the true posterior.  
-`task02.py`: Apply the Doubly Reparameterized Gradient Estimator, [DReG](https://arxiv.org/pdf/1810.04152.pdf), to the original experiment.  
-`task03.py`: Investigates the latent spaces of an IWAE with two stochastic layers.
-`task04.py`: Extend the experiment in `main.py` to a conditional IWAE, conditioned on the image labels.
-
 ## Results
 Samples (left) and mean function (right) when sampling from the prior, during training of an IWAE with 50 importance samples.    
 <img src="results/iwae_50.gif" width="600" height="300" />
@@ -34,6 +21,19 @@ Test-set log likelihoods as estimated using k=5000 importance samples:
 | IWAE k=1 | -84.83 | -85.33 |
 | IWAE k=5 | -83.48 | -83.89 |
 | IWAE k=50 | -82.82 | -82.90 |
+
+## Usage
+The results for the model with 1 stochastic layer and 1, 5 or 50 importance samples can be obtained by running `main.py` with the default settings, adjusting the number of samples.
+``` 
+python main.py --n_samples          <# of importance samples, 5 by default>  
+               --objective          <choose iwae_elbo or vae_elbo, iwae_elbo by default>
+               --stochastic_layers  <# of stochastic layers, 1 by default>
+```
+The model is investigated further in a series of tasks found in `./tasks`.  
+`task01.py`: Use a 2D latent space to investigate both true and variational posteriors. We can use *self-normalized importance sampling* to estimate posterior means and *sampling importance resampling* to draw samples from the true posterior.  
+`task02.py`: Apply the Doubly Reparameterized Gradient Estimator, [DReG](https://arxiv.org/pdf/1810.04152.pdf), to the original experiment.  
+`task03.py`: Investigates the latent spaces of an IWAE with two stochastic layers.
+`task04.py`: Extend the experiment in `main.py` to a conditional IWAE, conditioned on the image labels.
 
 # Additional results:
 ### DReG estimator, 1 stochastic layer
