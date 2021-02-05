@@ -41,7 +41,7 @@ parser.add_argument("--epochs", type=int, default=-1,
 parser.add_argument("--objective", type=str, default="iwae_elbo", choices=["vae_elbo", "iwae_elbo", "iwae_eq14", "vae_elbo_kl"])
 parser.add_argument("--gpu", type=str, default='0', help="Choose GPU")
 args = parser.parse_args()
-# args = parser.parse_args(['--gpu', '0', ])
+
 print(args)
 
 # ---- string describing the experiment, to use in tensorboard and plots
@@ -109,25 +109,24 @@ class CIWAE(iwae1.IWAE):
 
     def call(self, x, y, n_samples, beta=1.0):
 
+        y_onehot = tf.one_hot(tf.cast(y, tf.uint8), depth=10)
+
         # ---- encode
-        xy = tf.concat([x, tf.one_hot(tf.cast(y, tf.uint8), depth=10)], axis=-1)
+        xy = tf.concat([x, y_onehot], axis=-1)
         z, qzxy  = self.encoder(xy, n_samples)
 
         # ---- decode
-        y_onehot = tf.tile(tf.one_hot(tf.cast(y, tf.uint8), depth=10)[None, :, :], [n_samples, 1, 1])
-        zy = tf.concat([z, y_onehot], axis=-1)
+        zy = tf.concat([z, tf.tile(y_onehot[None, :, :], [n_samples, 1, 1])], axis=-1)
         logits, pxzy = self.decoder(zy)
 
         # ---- conditional prior
-        pzy = self.conditional_prior_network(tf.one_hot(tf.cast(y, tf.uint8), depth=10))
+        pzy = self.conditional_prior_network(y_onehot)
 
         # ---- the prior does not have to be conditional on y
-        # ---- keeping a standard normal prior makes plotting easier in the end
         # pz = tfd.Normal(0, 1)
 
         # ---- loss
         lpzy = tf.reduce_sum(pzy.log_prob(z), axis=-1)
-        # lpzy = tf.reduce_sum(pz.log_prob(z), axis=-1)
 
         lqzxy = tf.reduce_sum(qzxy.log_prob(z), axis=-1)
 

@@ -23,7 +23,7 @@ Test-set log likelihoods as estimated using k=5000 importance samples:
 | IWAE k=50 | -82.82 | -82.90 |
 
 ## Usage
-The results for the model with 1 stochastic layer and 1, 5 or 50 importance samples can be obtained by running `main.py` with the default settings, adjusting the number of samples.
+The results for the IWAE with 1 or 2 stochastic layers and 1, 5 or 50 importance samples can be obtained by running `main.py` as
 ``` 
 python main.py --n_samples          <# of importance samples, 5 by default>  
                --objective          <choose iwae_elbo or vae_elbo, iwae_elbo by default>
@@ -36,7 +36,7 @@ The model is investigated further in a series of tasks found in `./tasks`.
 `task04.py`: Extend the experiment in `main.py` to a conditional IWAE, conditioned on the image labels.
 
 # Additional results:
-### DReG estimator, 1 stochastic layer
+## DReG estimator, 1 stochastic layer
 The Doubly Reparameterized Gradient Estimator for Monte Carlo Objectives, [DReG](https://arxiv.org/pdf/1810.04152.pdf), provides even lower variance gradients for the inference network, than just using the reparameterization trick. This is implemented in `task02.py`.  
 
 | Method | DReG Test-set LLH | Standard IWAE Test-set LLH |
@@ -45,17 +45,19 @@ The Doubly Reparameterized Gradient Estimator for Monte Carlo Objectives, [DReG]
 | IWAE k=5 | -84.90 | -85.18 |
 | IWAE k=50 | -84.32 | -84.59 |
 
-### Variational and true posteriors
+## Variational and true posteriors
 In an IWAE with a 2D latent space we can inspect the true posterior, by evaluating it over a grid. This is done in `task01.py`.  
 In the two left most plots below are shown a digit from the test-set alongside its true and variational posteriors. The variational posterior is axis aligned and usually covers the more complex true posterior. To the right are shown samples from the variational posterior and reconstructions of some of these. The bottom row shows how *sampling importance resampling*, using the self-normalized importance weights, can provide samples from the true posterior.   
 
 <img src="results/task01.gif" width="750" height="300" />
 
-### Latent representations with 2 stochastic layers
+## Latent representations with 2 stochastic layers
 In `task03.py` we fit an IWAE with 2 stochastic layers of dimension 4 and 2 respectively. The (PCA of) the latent representations are seen below. The expectation of the latent representations are obtained using self-normalized importance sampling. The first layer to the left and the second layer to the right.
 
 <img src="results/task03_iwae_elbo_2_50_posterior_z1_at_epoch_3279.png" width="320" height="240" /> <img src="results/task03_iwae_elbo_2_50_posterior_z2_at_epoch_3279.png" width="320" height="240" />
 
+## Regular VAE results 
+By running `main.py` with `--objective vae_elbo` the VAE results from the IWAE paper can be reproduced.
 ### 1 stochastic layer VAE
 | Method | Test-set LLH (this repo) | Test-set LLH ([original paper](https://arxiv.org/pdf/1509.00519.pdf)) |
 | --- | --- | --- |
@@ -70,7 +72,7 @@ In `task03.py` we fit an IWAE with 2 stochastic layers of dimension 4 and 2 resp
 | VAE k=5 | -84.08 | -85.01 |
 | VAE k=50 | -83.89 | -84.78 |
 
-### CVAE 1 stochastic layer
+## CVAE 1 stochastic layer
 The [Conditional VAE](https://proceedings.neurips.cc/paper/2015/file/8d55a249e6baa5c06772297520da2051-Paper.pdf) (IWAE in this case) can be coditioned on some context, in this case the image labels. The prior can be the usual prior (`task05.py`) or conditional on the label as well (`task04.py`). In these results the prior is conditional on the label.
 
 | Method | Test-set LLH |
